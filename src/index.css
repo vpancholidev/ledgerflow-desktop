@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-900: #0f172a;
+  --color-emerald-500: #10b981;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 font-sans;
+  margin: 0;
+  padding: 0;
+}
