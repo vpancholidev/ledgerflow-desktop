@@ -1,11 +1,17 @@
-import { ArrowLeft, Download, Filter, Search, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Download, Filter, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useAppContext } from '../store';
 import { AddTransactionModal } from './modals/AddTransactionModal';
+import { generatePassbookPDF } from '../utils/pdf';
+import { Pagination } from './common/Pagination';
 
 export function Passbook({ customerId, onBack }: { customerId: string | null, onBack?: () => void }) {
     const { customers, transactions, addTransaction, companyName } = useAppContext();
     const [modalType, setModalType] = useState<'in' | 'out' | null>(null);
+    const [search, setSearch] = useState('');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 15;
 
     const customer = customers.find(c => c.id === customerId);
 
@@ -18,7 +24,11 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
         );
     }
 
-    const customerTxns = transactions.filter(t => t.customerId === customerId).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    let customerTxns = transactions.filter(t => t.customerId === customerId).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    if (search) {
+        customerTxns = customerTxns.filter(t => t.desc.toLowerCase().includes(search.toLowerCase()));
+    }
 
     let runningBalance = 0;
     const displayTxns = customerTxns.map(t => {
@@ -26,6 +36,9 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
         runningBalance += change;
         return { ...t, runningBalance };
     }).reverse();
+
+    const totalPages = Math.ceil(displayTxns.length / ITEMS_PER_PAGE);
+    const paginatedTxns = displayTxns.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const handleSave = (amt: number, date: string, desc: string) => {
         addTransaction({
@@ -37,19 +50,14 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
         });
     }
 
-    const handleShareWhatsApp = () => {
-        const text = `*${companyName} - Statement for ${customer.name}*\nCurrent Balance: ₹ ${Math.abs(customer.balance).toLocaleString()} (${customer.balance < 0 ? 'To Pay' : 'To Receive'})\n\nPlease check your account on record.`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
+    const handleExportPDF = () => {
+        const doc = generatePassbookPDF(companyName, customer, displayTxns);
+        doc.save(`${customer.name.replace(/[^a-z0-9]/gi, '_')}_Passbook.pdf`);
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto h-full flex flex-col relative print:bg-white text-slate-900">
-            <div className="flex flex-col gap-1 mb-4 hidden print:block text-center border-b pb-4">
-                <h1 className="text-2xl font-bold">{companyName}</h1>
-                <p className="text-sm">Passbook Statement for: <strong>{customer.name}</strong></p>
-            </div>
-
-            <div className="flex items-center gap-4 mb-6 print:hidden">
+        <div className="w-full max-w-5xl mx-auto h-full flex flex-col relative text-slate-900">
+            <div className="flex items-center gap-4 mb-6">
                 <button
                     onClick={onBack}
                     className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-slate-200 hover:bg-slate-50 transition-colors text-slate-500 cursor-pointer shadow-sm"
@@ -71,7 +79,7 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
                 </div>
             </div>
 
-            <div className="flex gap-4 mb-6 print:hidden">
+            <div className="flex gap-4 mb-6">
                 <button
                     onClick={() => setModalType('in')}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-lg transition-colors cursor-pointer text-center shadow-sm shadow-emerald-600/20"
@@ -86,60 +94,60 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
                 </button>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 overflow-hidden min-h-0 print:border-none print:shadow-none">
-                <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between gap-4 print:hidden">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 overflow-hidden min-h-0">
+                <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search transactions..."
+                            value={search}
+                            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
                             className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                         />
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={handleShareWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-emerald-700 hover:hover:bg-emerald-50 transition-colors cursor-pointer shadow-sm font-medium">
-                            <MessageCircle size={16} /> WhatsApp
-                        </button>
-                        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer shadow-sm font-medium">
-                            <Download size={16} /> Export
+                        <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer shadow-sm font-medium">
+                            <Download size={16} /> Export PDF
                         </button>
                     </div>
                 </div>
-                <div className="overflow-y-auto flex-1 p-0 print:overflow-visible">
-                    <table className="w-full text-left border-collapse print:text-sm">
-                        <thead className="sticky top-0 bg-white/95 backdrop-blur-sm shadow-[0_1px_0_0_rgb(226,232,240)] z-10 print:static print:bg-transparent print:shadow-none print:border-b-2 print:border-slate-900">
+                <div className="overflow-y-auto flex-1 p-0">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider w-32 print:px-2">Date</th>
-                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider print:px-2">Description</th>
-                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right print:px-2">In (Credit)</th>
-                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right print:px-2">Out (Debit)</th>
-                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right print:px-2">Balance</th>
+                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider w-32">Date</th>
+                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">Description</th>
+                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right">In (Credit)</th>
+                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right">Out (Debit)</th>
+                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right">Balance</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
-                            {displayTxns.map(t => (
-                                <tr key={t.id} className="hover:bg-slate-50 transition-colors print:hover:bg-white text-sm">
-                                    <td className="px-6 py-4 whitespace-nowrap text-slate-500 print:px-2">{new Date(t.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 text-slate-900 font-medium print:px-2">{t.desc}</td>
-                                    <td className="px-6 py-4 text-right tabular-nums text-emerald-600 font-medium print:px-2 print:text-black">
+                            {paginatedTxns.map(t => (
+                                <tr key={t.id} className="hover:bg-slate-50 transition-colors bg-white text-sm">
+                                    <td className="px-6 py-4 whitespace-nowrap text-slate-500">{new Date(t.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 text-slate-900 font-medium">{t.desc}</td>
+                                    <td className="px-6 py-4 text-right tabular-nums text-emerald-600 font-medium">
                                         {t.type === 'credit' ? `₹ ${t.amount.toLocaleString()}` : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-right tabular-nums text-red-500 font-medium print:px-2 print:text-black">
+                                    <td className="px-6 py-4 text-right tabular-nums text-red-500 font-medium">
                                         {t.type === 'debit' ? `₹ ${t.amount.toLocaleString()}` : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-right tabular-nums font-semibold text-slate-900 print:px-2">
+                                    <td className="px-6 py-4 text-right tabular-nums font-semibold text-slate-900">
                                         {t.runningBalance < 0 ? '-' : (t.runningBalance > 0 ? '+' : '')}₹ {Math.abs(t.runningBalance).toLocaleString()}
                                     </td>
                                 </tr>
                             ))}
-                            {displayTxns.length === 0 && (
+                            {paginatedTxns.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 print:px-2">No transactions recorded yet.</td>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No transactions recorded yet.</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
 
             {modalType && (

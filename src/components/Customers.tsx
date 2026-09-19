@@ -1,10 +1,15 @@
 import { Search, Plus, X, UploadCloud, File as FileIcon, Info } from 'lucide-react';
 import { useAppContext } from '../store';
 import { useState } from 'react';
+import { Pagination } from './common/Pagination';
 
 export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustomer: (id: string) => void, onViewDetails: (id: string) => void }) {
     const { customers, addCustomer } = useAppContext();
     const [showAdd, setShowAdd] = useState(false);
+    const [search, setSearch] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 15;
+
     const [newCustomer, setNewCustomer] = useState({
         name: '',
         phone: '',
@@ -21,6 +26,14 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
             setNewCustomer({ name: '', phone: '', address: '', idProof: '', notes: '', documents: [] });
         }
     }
+
+    const filteredCustomers = customers.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.phone.includes(search)
+    );
+
+    const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+    const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="w-full max-w-5xl mx-auto h-full flex flex-col relative">
@@ -42,6 +55,8 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                         <input
                             type="text"
                             placeholder="Search customers..."
+                            value={search}
+                            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
                             className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                         />
                     </div>
@@ -56,7 +71,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
-                            {customers.map(c => {
+                            {paginatedCustomers.map(c => {
                                 const isReceivable = c.balance > 0;
                                 const isPayable = c.balance < 0;
                                 return (
@@ -83,7 +98,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                                     </tr>
                                 )
                             })}
-                            {customers.length === 0 && (
+                            {paginatedCustomers.length === 0 && (
                                 <tr>
                                     <td colSpan={3} className="px-6 py-8 text-center text-slate-500">No customers found.</td>
                                 </tr>
@@ -91,6 +106,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                         </tbody>
                     </table>
                 </div>
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
 
             {showAdd && (

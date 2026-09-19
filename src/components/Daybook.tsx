@@ -1,12 +1,17 @@
-import { Download, Calendar, Search, MessageCircle } from 'lucide-react';
+import { Download, Calendar, Search } from 'lucide-react';
 import { useAppContext } from '../store';
 import { useState } from 'react';
+import { generateDaybookPDF } from '../utils/pdf';
+import { Pagination } from './common/Pagination';
 
 export function Daybook() {
     const { transactions, customers, companyName } = useAppContext();
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
     const [search, setSearch] = useState('');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 15;
 
     // Apply filters
     let filteredTxns = [...transactions];
@@ -27,10 +32,13 @@ export function Daybook() {
     const totalDebits = filteredTxns.filter(t => t.type === 'debit').reduce((a, b) => a + b.amount, 0);
     const netChange = totalCredits - totalDebits;
 
-    const handleShareWhatsApp = () => {
-        const text = `*${companyName} - Daybook Summary*\nTotal Credits: ₹${totalCredits.toLocaleString()}\nTotal Debits: ₹${totalDebits.toLocaleString()}\nNet Change: ₹${netChange.toLocaleString()}`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
-    };
+    const totalPages = Math.ceil(filteredTxns.length / ITEMS_PER_PAGE);
+    const paginatedTxns = filteredTxns.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    const handleExportPDF = () => {
+        const doc = generateDaybookPDF(companyName, filteredTxns, customers, { credits: totalCredits, debits: totalDebits, net: netChange });
+        doc.save('Daybook.pdf');
+    }
 
     return (
         <div className="w-full max-w-6xl mx-auto h-full flex flex-col relative">
@@ -40,10 +48,7 @@ export function Daybook() {
                     <p className="text-slate-500 font-medium">{companyName || 'No Company Name'}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={handleShareWhatsApp} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-emerald-50 text-emerald-700 font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm">
-                        <MessageCircle size={16} /> Share on WhatsApp
-                    </button>
-                    <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm">
+                    <button onClick={handleExportPDF} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm">
                         <Download size={16} /> Export PDF
                     </button>
                 </div>
@@ -59,9 +64,19 @@ export function Daybook() {
                 </div>
                 <div className="text-slate-400 font-medium text-sm">OR</div>
                 <div className="flex items-center gap-2">
-                    <input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} className="border border-slate-200 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:border-emerald-500" />
+                    <input
+                        type="date"
+                        value={filterStartDate}
+                        onChange={e => { setFilterStartDate(e.target.value); setCurrentPage(1); }}
+                        className="border border-slate-200 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:border-emerald-500"
+                    />
                     <span className="text-slate-400">to</span>
-                    <input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} className="border border-slate-200 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:border-emerald-500" />
+                    <input
+                        type="date"
+                        value={filterEndDate}
+                        onChange={e => { setFilterEndDate(e.target.value); setCurrentPage(1); }}
+                        className="border border-slate-200 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:border-emerald-500"
+                    />
                 </div>
 
                 <div className="flex-1 relative min-w-[200px]">
@@ -70,7 +85,7 @@ export function Daybook() {
                         type="text"
                         placeholder="Search Particulars..."
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
+                        onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
                         className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-sm bg-white focus:outline-none focus:border-emerald-500"
                     />
                 </div>
@@ -96,7 +111,7 @@ export function Daybook() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 overflow-hidden min-h-0">
                 <div className="overflow-y-auto flex-1 p-0">
                     <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-sm shadow-[0_1px_0_0_rgb(226,232,240)] z-10">
+                        <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10 border-b border-slate-200">
                             <tr>
                                 <th className="px-6 py-4 font-semibold text-slate-600 text-xs tracking-wider w-40">Date / Time</th>
                                 <th className="px-6 py-4 font-semibold text-slate-600 text-xs tracking-wider">Particulars</th>
@@ -105,7 +120,7 @@ export function Daybook() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
-                            {filteredTxns.map(t => {
+                            {paginatedTxns.map(t => {
                                 const customer = customers.find(c => c.id === t.customerId);
                                 const isCredit = t.type === 'credit';
 
@@ -128,14 +143,14 @@ export function Daybook() {
                                     </tr>
                                 )
                             })}
-                            {filteredTxns.length === 0 && (
+                            {paginatedTxns.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">No transactions recorded in this period.</td>
+                                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">No transactions match your criteria.</td>
                                 </tr>
                             )}
-                            {filteredTxns.length > 0 && (
-                                <tr className="bg-slate-50/50 font-bold border-t-2 border-slate-200">
-                                    <td className="px-6 py-4" colSpan={2}>TOTAL</td>
+                            {paginatedTxns.length > 0 && (
+                                <tr className="bg-slate-50/50 font-bold border-t border-slate-200">
+                                    <td className="px-6 py-4" colSpan={2}>OVERALL TOTALS (ALL PAGES)</td>
                                     <td className="px-6 py-4 text-right tabular-nums text-red-500">{totalDebits.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                     <td className="px-6 py-4 text-right tabular-nums text-emerald-600">{totalCredits.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                 </tr>
@@ -143,6 +158,7 @@ export function Daybook() {
                         </tbody>
                     </table>
                 </div>
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
         </div>
     );
