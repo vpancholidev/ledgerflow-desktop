@@ -21,6 +21,13 @@ interface ElectronAPI {
     addTransaction: (data: any) => Promise<string>;
     getSettings: () => Promise<any[]>;
     saveSetting: (key: string, value: string) => Promise<boolean>;
+
+    // Window controls
+    minimize: () => Promise<void>;
+    maximize: () => Promise<void>;
+    close: () => Promise<void>;
+    isMaximized: () => Promise<boolean>;
+
     ipcRenderer: {
         send: (channel: string, ...args: any[]) => void;
         on: (channel: string, func: (...args: any[]) => void) => () => void;

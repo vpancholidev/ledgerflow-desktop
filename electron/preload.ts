@@ -28,6 +28,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getSettings: () => ipcRenderer.invoke('get-settings'),
     saveSetting: (key: string, value: string) => ipcRenderer.invoke('save-setting', key, value),
 
+    // Auto-updater
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    downloadUpdate: () => ipcRenderer.invoke('download-update'),
+    installUpdate: () => ipcRenderer.invoke('install-update'),
+    onUpdateAvailable: (callback: (info: any) => void) => ipcRenderer.on('update-available', callback),
+    onUpdateDownloaded: (callback: (info: any) => void) => ipcRenderer.on('update-downloaded', callback),
+    onUpdateError: (callback: (error: any) => void) => ipcRenderer.on('update-error', callback),
+    onUpdateProgress: (callback: (progress: any) => void) => ipcRenderer.on('update-progress', callback),
+
+    // Window controls
+    minimize: () => ipcRenderer.invoke('window-minimize'),
+    maximize: () => ipcRenderer.invoke('window-maximize'),
+    close: () => ipcRenderer.invoke('window-close'),
+    isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+
     // Kept for general events handling and bridging
     ipcRenderer: {
         send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),

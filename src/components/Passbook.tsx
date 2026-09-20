@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Filter, Search } from 'lucide-react';
+import { ArrowLeft, Download, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useAppContext } from '../store';
 import { AddTransactionModal } from './modals/AddTransactionModal';

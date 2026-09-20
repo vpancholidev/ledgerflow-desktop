@@ -10,7 +10,7 @@ import { CustomerDetails } from './components/CustomerDetails'
 import { ActivationScreen, CreatePinScreen, EnterPinScreen } from './components/AuthScreens'
 
 function AppContent() {
-  const { isLoaded, companyName, setCompanyName } = useAppContext();
+  const { isLoaded, companyName, setCompanyName, refreshData } = useAppContext();
 
   const [currentTab, setCurrentTab] = useState('Dashboard');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
@@ -34,6 +34,12 @@ function AppContent() {
       setAuthCheckDone(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      refreshData();
+    }
+  }, [currentTab, isLoaded]);
 
   // Onboarding states
   const [onboardName, setOnboardName] = useState('');

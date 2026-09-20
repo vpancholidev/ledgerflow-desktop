@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { db } from './index';
+import { db, saveDb } from './index';
 import { customers, transactions, appSettings } from './schema';
 import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -65,6 +65,13 @@ export function registerHandlers() {
         return uploadsDir;
     });
 
+    ipcMain.handle('open-file', async (_, filename) => {
+        const target = path.join(uploadsDir, filename);
+        if (fs.existsSync(target)) {
+            shell.openPath(target);
+        }
+    });
+
     // ----------------------------------------------------
     // SECURITY & LICENSING (PHASE 4)
     // ----------------------------------------------------
@@ -106,6 +113,7 @@ export function registerHandlers() {
             } else {
                 await db.insert(appSettings).values({ key: 'licenseKey', value: expected });
             }
+            saveDb();
             return true;
         }
         return false;
@@ -119,6 +127,7 @@ export function registerHandlers() {
         } else {
             await db.insert(appSettings).values({ key: 'dailyPin', value: hash });
         }
+        saveDb();
         return true;
     });
 
@@ -132,6 +141,7 @@ export function registerHandlers() {
         const expected = generateValidLicense();
         if (key.trim().toUpperCase() === expected) {
             await db.delete(appSettings).where(eq(appSettings.key, 'dailyPin'));
+            saveDb();
             return true;
         }
         return false;
@@ -168,6 +178,7 @@ export function registerHandlers() {
         await db.delete(appSettings).where(eq(appSettings.key, 'supabaseKey'));
         if (url) await db.insert(appSettings).values({ key: 'supabaseUrl', value: url });
         if (key) await db.insert(appSettings).values({ key: 'supabaseKey', value: key });
+        saveDb();
         return true;
     });
 
@@ -186,17 +197,39 @@ export function registerHandlers() {
 
     ipcMain.handle('add-customer', async (_, customerData) => {
         const id = crypto.randomUUID();
+        let finalCustomerNo = customerData.customerNo || ('CUST-' + Date.now().toString().slice(-6));
+
+        const existing = await db.select().from(customers).where(eq(customers.customerNo, finalCustomerNo));
+        if (existing.length > 0) {
+            if (!customerData.customerNo) {
+                // If auto-generated collision happened randomly, tweak it
+                finalCustomerNo = finalCustomerNo + '-' + Math.floor(Math.random() * 100);
+            } else {
+                throw new Error(`The Customer ID '${finalCustomerNo}' is already taken by another customer.`);
+            }
+        }
+
         await db.insert(customers).values({
             id,
             ...customerData,
+            customerNo: finalCustomerNo,
             createdAt: new Date(),
             documents: customerData.documents || [],
         });
-        return id;
+        saveDb();
+        return { id, customerNo: finalCustomerNo };
     });
 
     ipcMain.handle('update-customer', async (_, id, data) => {
+        if (data.customerNo) {
+            const existing = await db.select().from(customers).where(eq(customers.customerNo, data.customerNo));
+            if (existing.length > 0 && existing[0].id !== id) {
+                throw new Error(`The Customer ID '${data.customerNo}' is already registered to another customer.`);
+            }
+        }
+
         await db.update(customers).set(data).where(eq(customers.id, id));
+        saveDb();
         return true;
     });
 
@@ -212,6 +245,7 @@ export function registerHandlers() {
             ...txData,
             date: new Date(txData.date)
         });
+        saveDb();
         return id;
     });
 
@@ -225,6 +259,7 @@ export function registerHandlers() {
             target: appSettings.key,
             set: { value }
         });
+        saveDb();
         return true;
     });
 }

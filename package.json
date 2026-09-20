@@ -2,39 +2,69 @@
   "name": "ledgerflow-desktop",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "description": "LedgerFlow Desktop - Offline-first financial ledger application",
+  "author": "Vaibhav <vaibhav@example.com>",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:vite": "tsc -b && vite build",
+    "build:electron": "electron-builder",
+    "build": "npm run build:vite && npm run build:electron",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
-    "better-sqlite3": "^13.0.3",
+    "@types/sql.js": "^1.4.11",
     "drizzle-orm": "^0.45.2",
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "sql.js": "^1.14.2"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.13.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^6.1.1",
-    "electron": "^44.4.3",
-    "electron-rebuild": "^3.2.9",
+    "electron": "^32.0.0",
+    "electron-builder": "^26.15.3",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
-    "vite-plugin-electron": "^1.1.2",
-    "vite-plugin-electron-renderer": "^1.0.0"
+    "vite-plugin-electron": "^1.1.2"
+  },
+  "build": {
+    "asar": false,
+    "npmRebuild": false,
+    "appId": "com.ledgerflow.desktop",
+    "productName": "LedgerFlow",
+    "directories": {
+      "output": "dist-release",
+      "buildResources": "build-resources"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "ledgerflow-desktop"
+    }
   }
 }

@@ -7,6 +7,7 @@ export const appSettings = sqliteTable('app_settings', {
 
 export const customers = sqliteTable('customers', {
     id: text('id').primaryKey(),
+    customerNo: text('customer_no').notNull().default(''),
     name: text('name').notNull(),
     phone: text('phone').notNull(),
     address: text('address'),

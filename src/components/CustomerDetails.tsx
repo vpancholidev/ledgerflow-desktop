@@ -9,7 +9,7 @@ export function CustomerDetails({ customerId, onBack }: { customerId: string | n
     const customer = customers.find(c => c.id === customerId);
 
     const [editData, setEditData] = useState({
-        name: '', phone: '', address: '', idProof: '', notes: '', documents: [] as string[]
+        customerNo: '', name: '', phone: '', address: '', idProof: '', notes: '', documents: [] as string[]
     });
 
     if (!customer) {
@@ -23,6 +23,7 @@ export function CustomerDetails({ customerId, onBack }: { customerId: string | n
 
     const handleEditClick = () => {
         setEditData({
+            customerNo: customer.customerNo || '',
             name: customer.name,
             phone: customer.phone,
             address: customer.address,
@@ -53,13 +54,22 @@ export function CustomerDetails({ customerId, onBack }: { customerId: string | n
                 </button>
                 <div>
                     {isEditing ? (
-                        <input
-                            value={editData.name}
-                            onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                            className="text-2xl font-bold text-slate-900 border-b-2 border-emerald-500 focus:outline-none bg-transparent"
-                        />
+                        <div className="flex flex-col gap-1">
+                            <input
+                                value={editData.customerNo}
+                                onChange={(e) => setEditData({ ...editData, customerNo: e.target.value })}
+                                placeholder="Customer ID"
+                                className="text-sm font-bold text-slate-500 border-b-2 border-slate-200 focus:outline-none bg-transparent"
+                            />
+                            <input
+                                value={editData.name}
+                                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                                className="text-2xl font-bold text-slate-900 border-b-2 border-emerald-500 focus:outline-none bg-transparent"
+                            />
+                        </div>
                     ) : (
                         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                            {customer.customerNo && <span className="text-slate-400 font-mono text-lg px-2 py-1 bg-slate-100 rounded">{customer.customerNo}</span>}
                             {customer.name}
                         </h1>
                     )}
@@ -171,8 +181,8 @@ export function CustomerDetails({ customerId, onBack }: { customerId: string | n
                     )}
 
                     <div className="flex gap-4 flex-wrap">
-                        {((isEditing ? editData.documents : customer.documents) || []).length > 0 ? (
-                            (isEditing ? editData.documents : customer.documents).map((doc, idx) => (
+                        {((isEditing ? editData.documents : (customer.documents || [])) || []).length > 0 ? (
+                            (isEditing ? editData.documents : (customer.documents || [])).map((doc, idx) => (
                                 <div key={idx}
                                     onClick={() => {
                                         if (!isEditing && window.electronAPI) {

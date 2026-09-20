@@ -11,6 +11,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
     const ITEMS_PER_PAGE = 15;
 
     const [newCustomer, setNewCustomer] = useState({
+        customerNo: '',
         name: '',
         phone: '',
         address: '',
@@ -23,13 +24,14 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
         if (newCustomer.name && newCustomer.phone && newCustomer.address) {
             addCustomer(newCustomer);
             setShowAdd(false);
-            setNewCustomer({ name: '', phone: '', address: '', idProof: '', notes: '', documents: [] });
+            setNewCustomer({ customerNo: '', name: '', phone: '', address: '', idProof: '', notes: '', documents: [] });
         }
     }
 
     const filteredCustomers = customers.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.phone.includes(search)
+        c.phone.includes(search) ||
+        (c.customerNo && c.customerNo.toLowerCase().includes(search.toLowerCase()))
     );
 
     const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
@@ -65,6 +67,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                     <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 bg-white/95 backdrop-blur-sm shadow-[0_1px_0_0_rgb(226,232,240)] z-10">
                             <tr>
+                                <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">Cust ID</th>
                                 <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider">Phone Number</th>
                                 <th className="px-6 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wider text-right">Balance</th>
@@ -76,6 +79,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                                 const isPayable = c.balance < 0;
                                 return (
                                     <tr key={c.id} onClick={() => onSelectCustomer(c.id)} className="hover:bg-slate-50 transition-colors cursor-pointer group">
+                                        <td className="px-6 py-4 text-slate-500 text-sm font-mono">{c.customerNo || '--'}</td>
                                         <td className="px-6 py-4 flex items-center gap-3">
                                             <div className="font-medium text-slate-900 group-hover:text-emerald-600 transition-colors">{c.name}</div>
                                             <button
@@ -120,6 +124,18 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                         </div>
 
                         <div className="p-6 overflow-y-auto flex-1 space-y-5">
+                            <div className="grid grid-cols-2 gap-5 mb-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Customer ID (Auto-generated if empty)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="CUST-XXXXXX"
+                                        value={newCustomer.customerNo}
+                                        onChange={e => setNewCustomer({ ...newCustomer, customerNo: e.target.value })}
+                                        className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500 shadow-sm"
+                                    />
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-600 mb-1">Full Name <span className="text-red-500">*</span></label>

@@ -11,6 +11,7 @@ export type Transaction = {
 
 export type Customer = {
     id: string;
+    customerNo: string;
     name: string;
     phone: string;
     address: string;
@@ -30,6 +31,7 @@ type AppState = {
     updateCustomer: (id: string, data: Partial<Omit<Customer, 'id' | 'balance'>>) => Promise<void>;
     addTransaction: (t: Omit<Transaction, 'id' | 'balanceAfter'>) => Promise<void>;
     transferBetweenCustomers: (fromId: string, toId: string, amount: number, date: string, desc: string) => Promise<void>;
+    refreshData: () => Promise<void>;
 };
 
 const initialState: AppState = {
@@ -42,6 +44,7 @@ const initialState: AppState = {
     updateCustomer: async () => { },
     addTransaction: async () => { },
     transferBetweenCustomers: async () => { },
+    refreshData: async () => { },
 };
 
 const AppContext = createContext<AppState>(initialState);
@@ -52,38 +55,43 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const [rawCustomers, setRawCustomers] = useState<Omit<Customer, 'balance'>[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+    const refreshData = async () => {
+        if (!window.electronAPI) return;
+        try {
+            const txs = await window.electronAPI.getTransactions();
+            const custs = await window.electronAPI.getCustomers();
+            const sets = await window.electronAPI.getSettings();
+
+            const formattedTxs = txs.map((t: any) => ({
+                ...t,
+                date: new Date(t.date).toISOString()
+            }));
+
+            const formattedCusts = custs.map((c: any) => ({
+                ...c,
+                customerNo: c.customerNo || c.customer_no || ''
+            }));
+
+            setTransactions(formattedTxs);
+            setRawCustomers(formattedCusts);
+
+            const companySetting = sets.find((s: any) => s.key === 'companyName');
+            if (companySetting) {
+                setCompany(companySetting.value);
+            }
+        } catch (e) {
+            console.error("Failed to load initial data", e);
+        } finally {
+            setIsLoaded(true);
+        }
+    };
+
     useEffect(() => {
         if (!window.electronAPI) {
             setIsLoaded(true);
             return;
         }
-
-        async function loadData() {
-            try {
-                const txs = await window.electronAPI.getTransactions();
-                const custs = await window.electronAPI.getCustomers();
-                const sets = await window.electronAPI.getSettings();
-
-                const formattedTxs = txs.map((t: any) => ({
-                    ...t,
-                    date: new Date(t.date).toISOString()
-                }));
-
-                setTransactions(formattedTxs);
-                setRawCustomers(custs);
-
-                const companySetting = sets.find((s: any) => s.key === 'companyName');
-                if (companySetting) {
-                    setCompany(companySetting.value);
-                }
-            } catch (e) {
-                console.error("Failed to load initial data", e);
-            } finally {
-                setIsLoaded(true);
-            }
-        }
-
-        loadData();
+        refreshData();
     }, []);
 
     const setCompanyNameWrap = async (name: string) => {
@@ -96,8 +104,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const addCustomer = async (c: Omit<Customer, 'id' | 'balance'>) => {
         if (window.electronAPI) {
             try {
-                const newId = await window.electronAPI.addCustomer(c);
-                setRawCustomers(prev => [...prev, { ...c, id: newId }]);
+                const res = await window.electronAPI.addCustomer(c);
+                const newId = (res && typeof res === 'object') ? res.id : res;
+                const setNo = (res && typeof res === 'object') ? res.customerNo : c.customerNo;
+                setRawCustomers(prev => [...prev, { ...c, id: newId, customerNo: setNo }]);
             } catch (err: any) {
                 alert('DB Error (Customer): ' + err.message);
                 console.error(err);
@@ -131,14 +141,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const transferBetweenCustomers = async (fromId: string, toId: string, amount: number, date: string, desc: string) => {
         const tx1: Omit<Transaction, 'id' | 'balanceAfter'> = {
             customerId: fromId,
-            type: 'credit',
+            type: 'debit',
             amount,
             date,
             desc: `Transfer out: ${desc}`
         };
         const tx2: Omit<Transaction, 'id' | 'balanceAfter'> = {
             customerId: toId,
-            type: 'debit',
+            type: 'credit',
             amount,
             date,
             desc: `Transfer in: ${desc}`
@@ -173,7 +183,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             companyName, setCompanyName: setCompanyNameWrap,
             customers: customersWithBalances,
             transactions,
-            addCustomer, updateCustomer, addTransaction, transferBetweenCustomers
+            addCustomer, updateCustomer, addTransaction, transferBetweenCustomers, refreshData
         }}>
             {children}
         </AppContext.Provider>
