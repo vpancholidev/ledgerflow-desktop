@@ -91,7 +91,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                                         </td>
                                         <td className="px-6 py-4 text-slate-500">{c.phone}</td>
                                         <td className={`px-6 py-4 text-right font-semibold tabular-nums ${isReceivable ? 'text-emerald-600' :
-                                                isPayable ? 'text-red-500' : 'text-slate-400'
+                                            isPayable ? 'text-red-500' : 'text-slate-400'
                                             }`}>
                                             {isPayable ? '-' : (isReceivable ? '+' : '')}₹ {Math.abs(c.balance).toLocaleString()}
                                         </td>
@@ -176,25 +176,27 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-1">Attach Documents (Max 2, Optional)</label>
                                 <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg cursor-pointer transition-colors border border-slate-200">
-                                        <UploadCloud size={18} />
-                                        <span>Browse Files</span>
-                                        <input
-                                            type="file"
-                                            multiple
-                                            accept=".pdf,image/*"
-                                            className="hidden"
-                                            onChange={e => {
-                                                const files = Array.from(e.target.files || []);
-                                                if (files.length > 2) {
-                                                    alert("Maximum 2 documents are allowed.");
-                                                    e.target.value = '';
+                                    <button
+                                        onClick={async () => {
+                                            if (window.electronAPI) {
+                                                const allowance = 2 - newCustomer.documents.length;
+                                                if (allowance <= 0) {
+                                                    alert("Maximum 2 documents are allowed total.");
                                                     return;
                                                 }
-                                                setNewCustomer({ ...newCustomer, documents: files.map(f => f.name) });
-                                            }}
-                                        />
-                                    </label>
+                                                const newlySavedDocs = await window.electronAPI.selectFiles(allowance);
+                                                if (newlySavedDocs && newlySavedDocs.length > 0) {
+                                                    setNewCustomer({ ...newCustomer, documents: [...newCustomer.documents, ...newlySavedDocs] });
+                                                }
+                                            } else {
+                                                alert("Bridge Missing! Native File Uploader requires Desktop App Sandbox.");
+                                            }
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg cursor-pointer transition-colors border border-slate-200"
+                                    >
+                                        <UploadCloud size={18} />
+                                        <span>Browse Files</span>
+                                    </button>
                                     {newCustomer.documents.length > 0 && (
                                         <div className="text-sm text-slate-500 flex items-center gap-2">
                                             <FileIcon size={16} className="text-emerald-500" />

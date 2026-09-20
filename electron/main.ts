@@ -1,10 +1,12 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, protocol, net } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+import { registerHandlers } from './database/handlers'
 
 process.env.APP_ROOT = path.join(__dirname, '..')
 
@@ -22,6 +24,8 @@ function createWindow() {
         height: 800,
         titleBarStyle: 'hidden',
         webPreferences: {
+            sandbox: false,
+            contextIsolation: true,
             preload: path.join(__dirname, 'preload.js'),
         },
     })
@@ -47,4 +51,11 @@ app.on('activate', () => {
     }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+    protocol.handle('local', (request) => {
+        const filePath = request.url.replace('local://', '');
+        return net.fetch('file://' + decodeURIComponent(filePath));
+    });
+    registerHandlers();
+    createWindow();
+})

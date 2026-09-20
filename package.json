@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "ledgerflow-desktop",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,6 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
@@ -20,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.13.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

@@ -32,7 +32,7 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
 
     let runningBalance = 0;
     const displayTxns = customerTxns.map(t => {
-        const change = t.type === 'debit' ? t.amount : -t.amount;
+        const change = t.type === 'credit' ? t.amount : -t.amount;
         runningBalance += change;
         return { ...t, runningBalance };
     }).reverse();
@@ -54,6 +54,8 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
         const doc = generatePassbookPDF(companyName, customer, displayTxns);
         doc.save(`${customer.name.replace(/[^a-z0-9]/gi, '_')}_Passbook.pdf`);
     };
+
+
 
     return (
         <div className="w-full max-w-5xl mx-auto h-full flex flex-col relative text-slate-900">

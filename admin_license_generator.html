@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LedgerFlow Admin License Generator</title>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f172a; color: white; margin: 0; }
+        .box { background: white; color: #0f172a; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; max-width: 400px; }
+        h2 { margin-top: 0; color: #020617; }
+        input { padding: 12px; font-size: 18px; width: 100%; box-sizing: border-box; font-family: monospace; text-align: center; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px; outline: none; transition: border 0.2s; }
+        input:focus { border-color: #ef4444; }
+        button { padding: 12px 24px; font-size: 16px; background: #ef4444; color: white; border: none; cursor: pointer; border-radius: 8px; width: 100%; font-weight: bold; transition: background 0.2s; }
+        button:hover { background: #dc2626; }
+        .result { margin-top: 24px; font-size: 24px; font-family: monospace; color: #ef4444; font-weight: bold; min-height: 30px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Key Generator</h2>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 24px;">Enter the client's Hardware Machine ID to calculate their private activation key.</p>
+        <input type="text" id="machineId" placeholder="e.g. 3F3A60F221E4">
+        <button onclick="generate()">Generate License Key</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function generate() {
+            const id = document.getElementById('machineId').value.trim().toUpperCase();
+            const salt = "VAIBHAV_SOFTWARE_LOCKED_2026_X99"; // The exact same secret embedded in the Electron C++ backend!
+            if (!id) return;
+
+            const msgBuffer = new TextEncoder().encode(id + salt);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            const key = hashHex.substring(0, 16).toUpperCase().match(/.{4}/g).join('-');
+            document.getElementById('result').innerText = key;
+        }
+    </script>
+</body>
+</html>

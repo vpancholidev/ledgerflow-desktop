@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppProvider, useAppContext } from './store'
 import { Shell } from './components/layout/Shell'
 import { Dashboard } from './components/Dashboard'
@@ -7,11 +7,33 @@ import { Passbook } from './components/Passbook'
 import { Daybook } from './components/Daybook'
 import { Settings } from './components/Settings'
 import { CustomerDetails } from './components/CustomerDetails'
+import { ActivationScreen, CreatePinScreen, EnterPinScreen } from './components/AuthScreens'
 
 function AppContent() {
-  const { companyName, setCompanyName } = useAppContext();
+  const { isLoaded, companyName, setCompanyName } = useAppContext();
+
   const [currentTab, setCurrentTab] = useState('Dashboard');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
+  const [authCheckDone, setAuthCheckDone] = useState(false);
+  const [isLicensed, setIsLicensed] = useState(false);
+  const [hasPin, setHasPin] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(false);
+
+  useEffect(() => {
+    if (window.electronAPI) {
+      window.electronAPI.getAuthStatus().then(status => {
+        setIsLicensed(status.isLicensed);
+        setHasPin(status.hasPin);
+        setAuthCheckDone(true);
+      });
+    } else {
+      // Fallback bypass for browser testing
+      setIsLicensed(true);
+      setPinUnlocked(true);
+      setAuthCheckDone(true);
+    }
+  }, []);
 
   // Onboarding states
   const [onboardName, setOnboardName] = useState('');
@@ -25,6 +47,27 @@ function AppContent() {
     setSelectedCustomerId(customerId);
     setCurrentTab('CustomerDetails');
   };
+
+  if (!isLoaded || !authCheckDone) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-slate-500 font-medium tracking-wide">Booting Secure Local Database...</div>
+      </div>
+    );
+  }
+
+  if (!isLicensed) {
+    return <ActivationScreen onActivated={() => setIsLicensed(true)} />
+  }
+
+  if (!hasPin) {
+    return <CreatePinScreen onCreated={() => setHasPin(true)} />
+  }
+
+  if (!pinUnlocked) {
+    return <EnterPinScreen onUnlocked={() => setPinUnlocked(true)} onReset={() => setHasPin(false)} />
+  }
 
   return (
     <>

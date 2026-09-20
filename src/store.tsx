@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Transaction = {
     id: string;
@@ -21,58 +21,114 @@ export type Customer = {
 };
 
 type AppState = {
+    isLoaded: boolean;
     companyName: string;
     setCompanyName: (name: string) => void;
     customers: Customer[];
     transactions: Transaction[];
-    addCustomer: (c: Omit<Customer, 'id' | 'balance'>) => void;
-    addTransaction: (t: Omit<Transaction, 'id' | 'balanceAfter'>) => void;
-    transferBetweenCustomers: (fromId: string, toId: string, amount: number, date: string, desc: string) => void;
+    addCustomer: (c: Omit<Customer, 'id' | 'balance'>) => Promise<void>;
+    updateCustomer: (id: string, data: Partial<Omit<Customer, 'id' | 'balance'>>) => Promise<void>;
+    addTransaction: (t: Omit<Transaction, 'id' | 'balanceAfter'>) => Promise<void>;
+    transferBetweenCustomers: (fromId: string, toId: string, amount: number, date: string, desc: string) => Promise<void>;
 };
 
 const initialState: AppState = {
+    isLoaded: false,
     companyName: '',
     setCompanyName: () => { },
-    customers: [
-        { id: '1', name: 'Alice Smith', phone: '+91 9876543210', address: 'Mumbai, MH', balance: 15000 },
-        { id: '2', name: 'Bob Builder', phone: '+91 8765432109', address: 'Pune, MH', balance: -3500 },
-    ],
-    transactions: [
-        { id: '1', customerId: '1', type: 'debit', amount: 30000, date: new Date(Date.now() - 86400000 * 2).toISOString(), desc: 'Project Advance' },
-        { id: '2', customerId: '1', type: 'credit', amount: 15000, date: new Date().toISOString(), desc: 'Part Payment Received' },
-    ],
-    addCustomer: () => { },
-    addTransaction: () => { },
-    transferBetweenCustomers: () => { },
+    customers: [],
+    transactions: [],
+    addCustomer: async () => { },
+    updateCustomer: async () => { },
+    addTransaction: async () => { },
+    transferBetweenCustomers: async () => { },
 };
 
 const AppContext = createContext<AppState>(initialState);
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-    const [companyName, setCompany] = useState(initialState.companyName);
-    const [customers, setCustomers] = useState<Customer[]>(initialState.customers);
-    const [transactions, setTransactions] = useState<Transaction[]>(initialState.transactions);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [companyName, setCompany] = useState('');
+    const [rawCustomers, setRawCustomers] = useState<Omit<Customer, 'balance'>[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-    const addCustomer = (c: Omit<Customer, 'id' | 'balance'>) => {
-        setCustomers(prev => [...prev, { ...c, id: Date.now().toString(), balance: 0 }]);
+    useEffect(() => {
+        if (!window.electronAPI) {
+            setIsLoaded(true);
+            return;
+        }
+
+        async function loadData() {
+            try {
+                const txs = await window.electronAPI.getTransactions();
+                const custs = await window.electronAPI.getCustomers();
+                const sets = await window.electronAPI.getSettings();
+
+                const formattedTxs = txs.map((t: any) => ({
+                    ...t,
+                    date: new Date(t.date).toISOString()
+                }));
+
+                setTransactions(formattedTxs);
+                setRawCustomers(custs);
+
+                const companySetting = sets.find((s: any) => s.key === 'companyName');
+                if (companySetting) {
+                    setCompany(companySetting.value);
+                }
+            } catch (e) {
+                console.error("Failed to load initial data", e);
+            } finally {
+                setIsLoaded(true);
+            }
+        }
+
+        loadData();
+    }, []);
+
+    const setCompanyNameWrap = async (name: string) => {
+        setCompany(name);
+        if (window.electronAPI) {
+            await window.electronAPI.saveSetting('companyName', name);
+        }
+    }
+
+    const addCustomer = async (c: Omit<Customer, 'id' | 'balance'>) => {
+        if (window.electronAPI) {
+            try {
+                const newId = await window.electronAPI.addCustomer(c);
+                setRawCustomers(prev => [...prev, { ...c, id: newId }]);
+            } catch (err: any) {
+                alert('DB Error (Customer): ' + err.message);
+                console.error(err);
+            }
+        } else { alert('Bridge missing! Please make sure you are testing inside the actual LedgerFlow Desktop App window that popped up, and NOT your standard Web Browser (Chrome/Edge)!'); }
     };
 
-    const addTransaction = (t: Omit<Transaction, 'id' | 'balanceAfter'>) => {
-        const newTx = { ...t, id: Date.now().toString() + Math.random() };
-        setTransactions(prev => [...prev, newTx]);
-
-        if (t.customerId) {
-            setCustomers(prev => prev.map(c => {
-                if (c.id === t.customerId) {
-                    const change = t.type === 'debit' ? t.amount : -t.amount;
-                    return { ...c, balance: c.balance + change };
-                }
-                return c;
-            }));
+    const updateCustomer = async (id: string, data: Partial<Omit<Customer, 'id' | 'balance'>>) => {
+        if (window.electronAPI) {
+            try {
+                await window.electronAPI.updateCustomer(id, data);
+                setRawCustomers(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+            } catch (err: any) {
+                alert('DB Error (Update Customer): ' + err.message);
+            }
         }
     };
 
-    const transferBetweenCustomers = (fromId: string, toId: string, amount: number, date: string, desc: string) => {
+    const addTransaction = async (t: Omit<Transaction, 'id' | 'balanceAfter'>) => {
+        if (window.electronAPI) {
+            try {
+                const newId = await window.electronAPI.addTransaction(t);
+                setTransactions(prev => [...prev, { ...t, id: newId } as Transaction]);
+            } catch (err: any) {
+                alert('DB Error (Txn): ' + err.message);
+                console.error(err);
+            }
+        } else { alert('Bridge missing! Desktop Window Required.'); }
+    };
+
+    const transferBetweenCustomers = async (fromId: string, toId: string, amount: number, date: string, desc: string) => {
         const tx1: Omit<Transaction, 'id' | 'balanceAfter'> = {
             customerId: fromId,
             type: 'credit',
@@ -88,15 +144,36 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             desc: `Transfer in: ${desc}`
         };
 
-        addTransaction(tx1);
-        setTimeout(() => addTransaction(tx2), 10);
+        if (window.electronAPI) {
+            try {
+                const id1 = await window.electronAPI.addTransaction(tx1);
+                const id2 = await window.electronAPI.addTransaction(tx2);
+                setTransactions(prev => [...prev, { ...tx1, id: id1 } as Transaction, { ...tx2, id: id2 } as Transaction]);
+            } catch (err: any) {
+                alert('DB Error (Transfer): ' + err.message);
+            }
+        }
     };
+
+    // Compute balances dynamically
+    const customersWithBalances = rawCustomers.map(c => {
+        let balance = 0;
+        transactions.forEach(t => {
+            if (t.customerId === c.id) {
+                const change = t.type === 'credit' ? t.amount : -t.amount;
+                balance += change;
+            }
+        });
+        return { ...c, balance };
+    });
 
     return (
         <AppContext.Provider value={{
-            companyName, setCompanyName: setCompany,
-            customers, transactions,
-            addCustomer, addTransaction, transferBetweenCustomers
+            isLoaded,
+            companyName, setCompanyName: setCompanyNameWrap,
+            customers: customersWithBalances,
+            transactions,
+            addCustomer, updateCustomer, addTransaction, transferBetweenCustomers
         }}>
             {children}
         </AppContext.Provider>
