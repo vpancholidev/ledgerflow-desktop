@@ -38,7 +38,10 @@ autoUpdater.on('error', (err) => {
 autoUpdater.on('download-progress', (progress) => {
     win?.webContents.send('update-progress', progress)
 })
+let updateReady = false;
+
 autoUpdater.on('update-downloaded', (info) => {
+    updateReady = true;
     win?.webContents.send('update-downloaded', info)
 })
 
@@ -78,7 +81,11 @@ app.on('before-quit', async (event) => {
     }
 
     isQuitting = true;
-    app.quit();
+    if (updateReady) {
+        autoUpdater.quitAndInstall();
+    } else {
+        app.quit();
+    }
 });
 
 app.on('window-all-closed', () => {
