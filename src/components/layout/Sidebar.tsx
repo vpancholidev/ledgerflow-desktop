@@ -14,6 +14,11 @@ export function Sidebar({ currentTab, onTabChange }: { currentTab: string, onTab
                 <nav className="space-y-1">
                     <SidebarItem icon={SettingsIcon} label="Settings" active={currentTab === 'Settings'} onClick={() => onTabChange('Settings')} />
                 </nav>
+                <div className="mt-4 flex justify-center">
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold tracking-wider rounded-full uppercase">
+                        Client Build v0.0.2
+                    </span>
+                </div>
             </div>
         </div>
     );
@@ -24,8 +29,8 @@ function SidebarItem({ icon: Icon, label, active, onClick }: { icon: any, label:
         <button
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-sm font-medium ${active
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
         >
             <Icon size={18} className={active ? "text-emerald-600" : "text-slate-400"} />

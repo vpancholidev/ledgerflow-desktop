@@ -60,6 +60,28 @@ To ensure the client never loses data if their PC breaks:
 
 ---
 
+## 🚀 Over-The-Air (OTA) Application Updates
+The application has a robust, native Over-The-Air (OTA) updater built-in using `electron-updater`. Whenever you release a new version of the app (e.g., adding a new feature or fixing a bug), you do NOT need to ask the client to safely copy their database or manually uninstall the old application!
+
+### How To Push A New Update:
+1. Open this repository's `package.json` file.
+2. Under `"publish"`, ensure you have updated the `"owner"` to your specific GitHub Username and `"repo"` to this repository's name.
+3. Bump the `"version"` field at the very top of `package.json` (e.g., change `"0.0.0"` to `"1.0.1"`). 
+4. Run the automated release compilation command using a GitHub Personal Access Token (which has `repo` permissions):
+   ```powershell
+   $env:GH_TOKEN="ghp_YourGitHubSecretToken"
+   npm run build:electron -- -p always
+   ```
+   *Note: This strictly relies on your GitHub repository being Public so the client doesn't need a token to read it. If the repository is Private, you must securely embed a read-only GH_TOKEN inside the application code.*
+5. The `electron-builder` will securely construct the new version and automatically upload both the `.exe` and a special tracker file called `latest.yml` straight your GitHub Repository's **Releases** page!
+
+### How The Client Receives It:
+- Every time the client launches LedgerFlow Desktop, `main.ts` silently pings your GitHub Releases page in the background.
+- If it detects that a higher version (e.g., `1.0.1`) exists on GitHub, it quietly downloads the installation binaries into their Windows cache.
+- The next time the client closes their application (or restarts their physical PC), the new update is seamlessly applied to the machine without touching their local `.db` file whatsoever!
+
+---
+
 ## 💻 Developer Commands
 
 If you need to make changes down the line:

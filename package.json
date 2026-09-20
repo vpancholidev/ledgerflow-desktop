@@ -1,7 +1,7 @@
 {
   "name": "ledgerflow-desktop",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "LedgerFlow Desktop - Offline-first financial ledger application",
   "author": "Vaibhav <vaibhav@example.com>",
   "main": "dist-electron/main.js",
@@ -45,12 +45,15 @@
     "vite-plugin-electron": "^1.1.2"
   },
   "build": {
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "**/*.wasm"
+    ],
     "npmRebuild": false,
     "appId": "com.ledgerflow.desktop",
     "productName": "LedgerFlow",
     "directories": {
-      "output": "dist-release",
+      "output": "release-build",
       "buildResources": "build-resources"
     },
     "win": {
@@ -65,7 +68,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "YOUR_GITHUB_USERNAME",
+      "owner": "vpancholidev",
       "repo": "ledgerflow-desktop"
     }
   }

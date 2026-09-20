@@ -105,8 +105,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (window.electronAPI) {
             try {
                 const res = await window.electronAPI.addCustomer(c);
-                const newId = (res && typeof res === 'object') ? res.id : res;
-                const setNo = (res && typeof res === 'object') ? res.customerNo : c.customerNo;
+                const newId = (res && typeof res === 'object') ? (res as any).id : res;
+                const setNo = (res && typeof res === 'object') ? (res as any).customerNo : c.customerNo;
                 setRawCustomers(prev => [...prev, { ...c, id: newId, customerNo: setNo }]);
             } catch (err: any) {
                 alert('DB Error (Customer): ' + err.message);
