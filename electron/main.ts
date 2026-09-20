@@ -8,7 +8,7 @@ import log from 'electron-log'
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-import { registerHandlers } from './database/handlers'
+import { registerHandlers, performAutoBackup } from './database/handlers'
 import { initDb } from './database/index'
 
 process.env.APP_ROOT = path.join(__dirname, '..')
@@ -63,6 +63,23 @@ function createWindow() {
         win.loadFile(path.join(RENDERER_DIST, 'index.html'))
     }
 }
+
+let isQuitting = false;
+
+app.on('before-quit', async (event) => {
+    if (isQuitting) return;
+
+    event.preventDefault();
+    try {
+        // Execute background shadow backup to Supabase
+        await performAutoBackup();
+    } catch (e) {
+        console.error("Auto Backup Failed slightly, quitting anyway...", e);
+    }
+
+    isQuitting = true;
+    app.quit();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -131,7 +148,7 @@ app.whenReady().then(async () => {
     await initDb();
     registerHandlers();
     createWindow();
-    
+
     if (!VITE_DEV_SERVER_URL) {
         autoUpdater.checkForUpdatesAndNotify()
     }

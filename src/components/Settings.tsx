@@ -33,9 +33,15 @@ export function Settings() {
 
     const handleBackup = async () => {
         if (!supabaseUrl || !supabaseKey) {
-            alert("Please enter Supabase URL and Key first, then Save Changes.");
+            alert("Please enter Supabase URL and Key first.");
             return;
         }
+
+        // Auto-save the keys so the background task has them when the app closes!
+        if (window.electronAPI) {
+            await window.electronAPI.saveSupabaseConfig({ url: supabaseUrl, key: supabaseKey });
+        }
+
         setIsSyncing(true);
         setSyncMessage('');
         try {

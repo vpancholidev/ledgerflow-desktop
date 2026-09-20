@@ -8,6 +8,8 @@ import path from 'path';
 import { app, dialog, BrowserWindow, shell } from 'electron';
 import os from 'os';
 import { createClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
+if (typeof globalThis.WebSocket === 'undefined') (globalThis as any).WebSocket = WebSocket;
 
 export function registerHandlers() {
     const uploadsDir = path.join(app.getPath('userData'), 'uploads');
@@ -149,29 +151,14 @@ export function registerHandlers() {
 
     ipcMain.handle('backup-to-cloud', async (_, { url, key }) => {
         try {
-            const supabase = createClient(url, key);
-            const dbPath = path.join(app.getPath('userData'), 'ledgerflow_data.db');
-
-            if (fs.existsSync(dbPath)) {
-                const dbBuffer = fs.readFileSync(dbPath);
-                const { error: dbErr } = await supabase.storage.from('backups').upload('database/ledgerflow_data.db', dbBuffer, { upsert: true });
-                if (dbErr) throw dbErr;
-            }
-
-            if (fs.existsSync(uploadsDir)) {
-                const files = fs.readdirSync(uploadsDir);
-                for (const file of files) {
-                    const filePath = path.join(uploadsDir, file);
-                    const fileBuffer = fs.readFileSync(filePath);
-                    await supabase.storage.from('backups').upload(`images/${file}`, fileBuffer, { upsert: true });
-                }
-            }
+            await performAutoBackup(url, key);
             return { success: true };
         } catch (e: any) {
             console.error("Cloud Backup Error", e);
             return { success: false, error: e.message };
         }
     });
+
 
     ipcMain.handle('save-supabase-config', async (_, { url, key }) => {
         await db.delete(appSettings).where(eq(appSettings.key, 'supabaseUrl'));
@@ -262,4 +249,44 @@ export function registerHandlers() {
         saveDb();
         return true;
     });
+}
+
+export async function performAutoBackup(forceUrl?: string, forceKey?: string) {
+    try {
+        let url = forceUrl;
+        let key = forceKey;
+
+        if (!url || !key) {
+            const urlRec = await db.select().from(appSettings).where(eq(appSettings.key, 'supabaseUrl'));
+            const keyRec = await db.select().from(appSettings).where(eq(appSettings.key, 'supabaseKey'));
+            url = urlRec[0]?.value;
+            key = keyRec[0]?.value;
+        }
+
+        if (!url || !key) return; // Do not auto-backup if not configured
+
+        const supabase = createClient(url, key, {
+            auth: { persistSession: false }
+        });
+        const dbPath = path.join(app.getPath('userData'), 'ledgerflow_data.db');
+        const uploadsDir = path.join(app.getPath('userData'), 'uploads');
+
+        if (fs.existsSync(dbPath)) {
+            const dbBuffer = fs.readFileSync(dbPath);
+            const { error: dbErr } = await supabase.storage.from('backups').upload('database/ledgerflow_data.db', dbBuffer, { upsert: true });
+            if (dbErr) throw dbErr;
+        }
+
+        if (fs.existsSync(uploadsDir)) {
+            const files = fs.readdirSync(uploadsDir);
+            for (const file of files) {
+                const filePath = path.join(uploadsDir, file);
+                const fileBuffer = fs.readFileSync(filePath);
+                await supabase.storage.from('backups').upload(`images/${file}`, fileBuffer, { upsert: true });
+            }
+        }
+    } catch (e: any) {
+        console.error("Cloud Backup Sub-Routine Error", e);
+        throw e;
+    }
 }
