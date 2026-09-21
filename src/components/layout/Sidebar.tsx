@@ -16,7 +16,7 @@ export function Sidebar({ currentTab, onTabChange }: { currentTab: string, onTab
                 </nav>
                 <div className="mt-4 flex justify-center">
                     <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold tracking-wider rounded-full uppercase">
-                        Client Build v0.0.7 🚀
+                        Client Build v0.0.8 🚀
                     </span>
                 </div>
             </div>
