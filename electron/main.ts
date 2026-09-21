@@ -21,7 +21,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 
 autoUpdater.logger = log
 autoUpdater.logger.transports.file.level = 'info'
-autoUpdater.autoDownload = false
+autoUpdater.autoDownload = true
 
 autoUpdater.on('checking-for-update', () => {
     win?.webContents.send('update-checking')
@@ -103,8 +103,11 @@ app.on('activate', () => {
 
 ipcMain.handle('check-for-updates', async () => {
     try {
-        const result = await autoUpdater.checkForUpdates()
-        return result
+        if (!app.isPackaged) {
+            return { error: 'DEV_MODE' };
+        }
+        const result = await autoUpdater.checkForUpdates();
+        return result;
     } catch (err: any) {
         return { error: err.message }
     }

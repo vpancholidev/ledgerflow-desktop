@@ -21,6 +21,15 @@ interface ElectronAPI {
     addTransaction: (data: any) => Promise<string>;
     getSettings: () => Promise<any[]>;
     saveSetting: (key: string, value: string) => Promise<boolean>;
+    // Auto-Updater
+    checkForUpdates: () => Promise<any>;
+    downloadUpdate: () => Promise<any>;
+    installUpdate: () => Promise<any>;
+    onUpdateAvailable: (callback: (info: any) => void) => void;
+    onUpdateNotAvailable: (callback: () => void) => void;
+    onUpdateDownloaded: (callback: (info: any) => void) => void;
+    onUpdateError: (callback: (error: any) => void) => void;
+    onUpdateProgress: (callback: (progress: any) => void) => void;
 
     // Window controls
     minimize: () => Promise<void>;
