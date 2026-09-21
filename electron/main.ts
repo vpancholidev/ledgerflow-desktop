@@ -107,7 +107,7 @@ ipcMain.handle('check-for-updates', async () => {
             return { error: 'DEV_MODE' };
         }
         const result = await autoUpdater.checkForUpdates();
-        return result;
+        return { version: result?.updateInfo?.version || 'unknown' };
     } catch (err: any) {
         return { error: err.message }
     }

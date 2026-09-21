@@ -1,7 +1,7 @@
 {
   "name": "ledgerflow-desktop",
   "private": true,
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "LedgerFlow Desktop - Offline-first financial ledger application",
   "author": "Vaibhav <vaibhav@example.com>",
   "main": "dist-electron/main.js",
@@ -69,8 +69,7 @@
     "publish": {
       "provider": "github",
       "owner": "vpancholidev",
-      "repo": "ledgerflow-desktop",
-      "releaseType": "release"
+      "repo": "ledgerflow-desktop"
     }
   }
 }
