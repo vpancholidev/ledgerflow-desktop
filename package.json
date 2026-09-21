@@ -69,7 +69,8 @@
     "publish": {
       "provider": "github",
       "owner": "vpancholidev",
-      "repo": "ledgerflow-desktop"
+      "repo": "ledgerflow-desktop",
+      "releaseType": "release"
     }
   }
 }
