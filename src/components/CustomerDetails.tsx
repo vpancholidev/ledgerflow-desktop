@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { ArrowLeft, Edit, FileText, Phone, MapPin, CreditCard, StickyNote, Folder, Check, X, UploadCloud } from 'lucide-react';
 import { useAppContext } from '../store';
+import { ConfirmationReportModal } from './modals/ConfirmationReportModal';
 
 export function CustomerDetails({ customerId, onBack }: { customerId: string | null, onBack?: () => void }) {
     const { customers, updateCustomer } = useAppContext();
     const [isEditing, setIsEditing] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     const customer = customers.find(c => c.id === customerId);
 
@@ -87,9 +89,14 @@ export function CustomerDetails({ customerId, onBack }: { customerId: string | n
                             </button>
                         </>
                     ) : (
-                        <button onClick={handleEditClick} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm">
-                            <Edit size={16} /> Edit Profile
-                        </button>
+                        <>
+                            <button onClick={() => setIsReportModalOpen(true)} className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm">
+                                <FileText size={16} /> Confirmation Report
+                            </button>
+                            <button onClick={handleEditClick} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm">
+                                <Edit size={16} /> Edit Profile
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
@@ -216,6 +223,12 @@ export function CustomerDetails({ customerId, onBack }: { customerId: string | n
                     </div>
                 </div>
             </div>
+
+            <ConfirmationReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                customerId={customer.id}
+            />
         </div>
     );
 }

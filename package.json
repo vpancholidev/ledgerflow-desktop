@@ -1,7 +1,7 @@
 {
   "name": "ledgerflow-desktop",
   "private": true,
-  "version": "0.0.9",
+  "version": "0.0.11",
   "description": "LedgerFlow Desktop - Offline-first financial ledger application",
   "author": "Vaibhav <vaibhav@example.com>",
   "main": "dist-electron/main.js",
@@ -11,7 +11,8 @@
     "build:electron": "electron-builder",
     "build": "npm run build:vite && npm run build:electron",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "release": "git add . && git commit -m \"auto-publish\" && npm version patch && git push && git push --tags && npm run build:vite && electron-builder -p always"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
@@ -23,6 +24,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.47.0",
+    "node-machine-id": "^1.1.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sql.js": "^1.14.2",
@@ -69,7 +71,8 @@
     "publish": {
       "provider": "github",
       "owner": "vpancholidev",
-      "repo": "ledgerflow-desktop"
+      "repo": "ledgerflow-desktop",
+      "releaseType": "release"
     }
   }
 }

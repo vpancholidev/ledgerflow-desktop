@@ -8,12 +8,14 @@ import { Daybook } from './components/Daybook'
 import { Settings } from './components/Settings'
 import { CustomerDetails } from './components/CustomerDetails'
 import { ActivationScreen, CreatePinScreen, EnterPinScreen } from './components/AuthScreens'
+import { ConfirmationReportModal } from './components/modals/ConfirmationReportModal'
 
 function AppContent() {
   const { isLoaded, companyName, setCompanyName, refreshData } = useAppContext();
 
   const [currentTab, setCurrentTab] = useState('Dashboard');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [isGlobalReportModalOpen, setIsGlobalReportModalOpen] = useState(false);
 
   const [authCheckDone, setAuthCheckDone] = useState(false);
   const [isLicensed, setIsLicensed] = useState(false);
@@ -77,7 +79,7 @@ function AppContent() {
 
   return (
     <>
-      <Shell currentTab={currentTab} onTabChange={setCurrentTab}>
+      <Shell currentTab={currentTab} onTabChange={setCurrentTab} onOpenReport={() => setIsGlobalReportModalOpen(true)}>
         {currentTab === 'Dashboard' && <Dashboard />}
         {currentTab === 'Customers' && (
           <Customers
@@ -138,6 +140,11 @@ function AppContent() {
           </div>
         </div>
       )}
+
+      <ConfirmationReportModal
+        isOpen={isGlobalReportModalOpen}
+        onClose={() => setIsGlobalReportModalOpen(false)}
+      />
     </>
   );
 }

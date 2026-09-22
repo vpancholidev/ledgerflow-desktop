@@ -51,6 +51,7 @@ export async function initDb() {
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY,
         customer_id TEXT NOT NULL,
+        counterparty_id TEXT,
         type TEXT NOT NULL,
         amount REAL NOT NULL,
         date INTEGER NOT NULL,
@@ -60,6 +61,7 @@ export async function initDb() {
     `);
 
   try { sqlite.exec("ALTER TABLE customers ADD COLUMN customer_no TEXT NOT NULL DEFAULT '';"); } catch (e) { }
+  try { sqlite.exec("ALTER TABLE transactions ADD COLUMN counterparty_id TEXT;"); } catch (e) { }
 
   saveDb();
 }

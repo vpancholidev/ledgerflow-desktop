@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 export type Transaction = {
     id: string;
     customerId: string | null;
+    counterpartyId?: string;
     type: 'credit' | 'debit';
     amount: number;
     date: string;
@@ -141,6 +142,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const transferBetweenCustomers = async (fromId: string, toId: string, amount: number, date: string, desc: string) => {
         const tx1: Omit<Transaction, 'id' | 'balanceAfter'> = {
             customerId: fromId,
+            counterpartyId: toId,
             type: 'debit',
             amount,
             date,
@@ -148,6 +150,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         };
         const tx2: Omit<Transaction, 'id' | 'balanceAfter'> = {
             customerId: toId,
+            counterpartyId: fromId,
             type: 'credit',
             amount,
             date,

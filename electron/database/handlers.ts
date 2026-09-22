@@ -9,6 +9,7 @@ import { app, dialog, BrowserWindow, shell } from 'electron';
 import os from 'os';
 import { createClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
+import { machineIdSync } from 'node-machine-id';
 if (typeof globalThis.WebSocket === 'undefined') (globalThis as any).WebSocket = WebSocket;
 
 export function registerHandlers() {
@@ -78,10 +79,14 @@ export function registerHandlers() {
     // SECURITY & LICENSING (PHASE 4)
     // ----------------------------------------------------
     const getMachineId = () => {
-        const cpus = os.cpus();
-        const mac = Object.values(os.networkInterfaces()).flat().find(i => i && !i.internal && i.mac)?.mac || 'NO-MAC';
-        const raw = `${cpus[0].model}-${mac}-${os.totalmem()}`;
-        return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 12).toUpperCase();
+        try {
+            const mId = machineIdSync();
+            return crypto.createHash('sha256').update(mId).digest('hex').substring(0, 12).toUpperCase();
+        } catch (e) {
+            const cpus = os.cpus();
+            const raw = `${cpus[0].model}-${os.totalmem()}`;
+            return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 12).toUpperCase();
+        }
     };
 
     const generateValidLicense = () => {

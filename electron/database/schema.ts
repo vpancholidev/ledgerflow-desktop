@@ -20,6 +20,7 @@ export const customers = sqliteTable('customers', {
 export const transactions = sqliteTable('transactions', {
     id: text('id').primaryKey(),
     customerId: text('customer_id').notNull(),
+    counterpartyId: text('counterparty_id'),
     type: text('type').notNull(), // 'credit' | 'debit'
     amount: real('amount').notNull(),
     date: integer('date', { mode: 'timestamp' }).notNull(),
