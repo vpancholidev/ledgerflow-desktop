@@ -73,9 +73,7 @@ function AppContent() {
 
         {/* Core Animated Logo Cluster */}
         <div className="relative z-10 flex flex-col items-center animate-[pulse_2s_ease-in-out_infinite]">
-          <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-emerald-600/40">
-            <div className="w-10 h-10 border-[5px] border-white rounded-br-2xl" />
-          </div>
+          <img src="/logo.png" alt="LedgerFlow Logo" className="w-32 h-32 object-contain mb-6 drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]" />
           <h1 className="text-4xl font-extrabold tracking-tight text-white mb-3 drop-shadow-lg">
             Ledger<span className="text-emerald-400">Flow</span>
           </h1>
@@ -157,9 +155,7 @@ function AppContent() {
       {(!companyName) && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <div className="w-8 h-8 border-4 border-emerald-600 rounded-br-2xl" />
-            </div>
+            <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome to LedgerFlow!</h2>
             <p className="text-slate-500 mb-8">Let's set up your business. Enter your company or organization name to continue.</p>
 
