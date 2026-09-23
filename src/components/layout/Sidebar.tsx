@@ -1,4 +1,5 @@
 import { LayoutDashboard, Users, Settings as SettingsIcon, BookText, FileText } from 'lucide-react';
+import packageJson from '../../../package.json';
 
 export function Sidebar({ currentTab, onTabChange, onOpenReport }: { currentTab: string, onTabChange: (tab: string) => void, onOpenReport: () => void }) {
     return (
@@ -17,7 +18,7 @@ export function Sidebar({ currentTab, onTabChange, onOpenReport }: { currentTab:
                 </nav>
                 <div className="mt-4 flex flex-col items-center gap-1.5">
                     <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold tracking-wider rounded-full uppercase">
-                        Build v1.0.0 🚀
+                        Build v{packageJson.version} 🚀
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium tracking-wide">
                         Developed by Codclaw Technologies
