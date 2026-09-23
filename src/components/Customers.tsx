@@ -151,7 +151,7 @@ export function Customers({ onSelectCustomer, onViewDetails }: { onSelectCustome
                                     <input
                                         type="text"
                                         value={newCustomer.phone}
-                                        onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                                        onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value.replace(/[^0-9+]/g, '') })}
                                         className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500 shadow-sm"
                                     />
                                 </div>

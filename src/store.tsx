@@ -31,6 +31,8 @@ type AppState = {
     addCustomer: (c: Omit<Customer, 'id' | 'balance'>) => Promise<void>;
     updateCustomer: (id: string, data: Partial<Omit<Customer, 'id' | 'balance'>>) => Promise<void>;
     addTransaction: (t: Omit<Transaction, 'id' | 'balanceAfter'>) => Promise<void>;
+    deleteTransaction: (id: string) => Promise<void>;
+    updateTransaction: (id: string, data: Partial<Omit<Transaction, 'id' | 'balanceAfter'>>) => Promise<void>;
     transferBetweenCustomers: (fromId: string, toId: string, amount: number, date: string, desc: string) => Promise<void>;
     refreshData: () => Promise<void>;
 };
@@ -44,6 +46,8 @@ const initialState: AppState = {
     addCustomer: async () => { },
     updateCustomer: async () => { },
     addTransaction: async () => { },
+    deleteTransaction: async () => { },
+    updateTransaction: async () => { },
     transferBetweenCustomers: async () => { },
     refreshData: async () => { },
 };
@@ -139,6 +143,25 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         } else { alert('Bridge missing! Desktop Window Required.'); }
     };
 
+    const deleteTransaction = async (id: string) => {
+        if (window.electronAPI) {
+            try {
+                await window.electronAPI.deleteTransaction?.(id);
+                // Also trigger a refresh to properly clear mirrors, but realistically we can just refresh everything
+                refreshData();
+            } catch (err: any) { alert('Delete Error: ' + err.message); }
+        }
+    };
+
+    const updateTransaction = async (id: string, data: Partial<Omit<Transaction, 'id' | 'balanceAfter'>>) => {
+        if (window.electronAPI) {
+            try {
+                await window.electronAPI.updateTransaction?.(id, data);
+                refreshData(); // Refresh catches any mirrored transfer edits seamlessly
+            } catch (err: any) { alert('Update Error: ' + err.message); }
+        }
+    };
+
     const transferBetweenCustomers = async (fromId: string, toId: string, amount: number, date: string, desc: string) => {
         const tx1: Omit<Transaction, 'id' | 'balanceAfter'> = {
             customerId: fromId,
@@ -186,7 +209,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             companyName, setCompanyName: setCompanyNameWrap,
             customers: customersWithBalances,
             transactions,
-            addCustomer, updateCustomer, addTransaction, transferBetweenCustomers, refreshData
+            addCustomer, updateCustomer, addTransaction, deleteTransaction, updateTransaction, transferBetweenCustomers, refreshData
         }}>
             {children}
         </AppContext.Provider>

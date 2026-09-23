@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     getTransactions: () => ipcRenderer.invoke('get-transactions'),
     addTransaction: (data: any) => ipcRenderer.invoke('add-transaction', data),
+    updateTransaction: (id: string, data: any) => ipcRenderer.invoke('update-transaction', id, data),
+    deleteTransaction: (id: string) => ipcRenderer.invoke('delete-transaction', id),
 
     getSettings: () => ipcRenderer.invoke('get-settings'),
     saveSetting: (key: string, value: string) => ipcRenderer.invoke('save-setting', key, value),

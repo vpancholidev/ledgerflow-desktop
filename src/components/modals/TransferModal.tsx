@@ -1,6 +1,7 @@
 import { X, ArrowRightLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useAppContext } from '../../store';
+import { SearchableSelect } from '../common/SearchableSelect';
 
 interface TransferModalProps {
     onClose: () => void;
@@ -29,38 +30,40 @@ export function TransferModal({ onClose }: TransferModalProps) {
 
                 <div className="p-6 space-y-4">
                     <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-slate-600 mb-1">From Customer</label>
-                            <select
-                                value={fromId} onChange={e => setFromId(e.target.value)}
-                                className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 shadow-sm"
-                            >
-                                <option value="">Select...</option>
-                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                        <div className="flex-1 w-1/2 min-w-0">
+                            <label className="block text-sm font-medium text-slate-600 mb-1">From Customer <span className="text-red-500">*</span></label>
+                            <SearchableSelect
+                                options={customers}
+                                value={fromId}
+                                onChange={setFromId}
+                                placeholder="Select Sender..."
+                            />
                         </div>
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-slate-600 mb-1">To Customer</label>
-                            <select
-                                value={toId} onChange={e => setToId(e.target.value)}
-                                className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 shadow-sm"
-                            >
-                                <option value="">Select...</option>
-                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                        <div className="flex-1 w-1/2 min-w-0">
+                            <label className="block text-sm font-medium text-slate-600 mb-1">To Customer <span className="text-red-500">*</span></label>
+                            <SearchableSelect
+                                options={customers}
+                                value={toId}
+                                onChange={setToId}
+                                placeholder="Select Target..."
+                            />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1">Amount (₹)</label>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">Amount (₹) <span className="text-red-500">*</span></label>
                         <input
-                            type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)}
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0.00"
+                            value={amount}
+                            onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                             className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg px-4 py-3 text-xl font-semibold focus:outline-none focus:border-emerald-500 shadow-sm"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1">Date</label>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">Date <span className="text-red-500">*</span></label>
                         <input
                             type="date" value={date} onChange={e => setDate(e.target.value)}
                             className="w-full bg-white border border-slate-200 text-slate-900 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500 shadow-sm"
@@ -82,10 +85,15 @@ export function TransferModal({ onClose }: TransferModalProps) {
                     </button>
                     <button
                         onClick={() => {
-                            if (fromId && toId && Number(amount) > 0 && fromId !== toId) {
-                                transferBetweenCustomers(fromId, toId, Number(amount), date, desc || 'Internal Transfer');
-                                onClose();
-                            }
+                            const num = Number(amount);
+                            if (!fromId) return alert("Please select a sender (From Customer).");
+                            if (!toId) return alert("Please select a receiver (To Customer).");
+                            if (fromId === toId) return alert("Sender and receiver cannot be the exact same customer.");
+                            if (num <= 0 || isNaN(num)) return alert("Please enter a valid positive transfer amount.");
+                            if (!date) return alert("Please select a transfer date.");
+
+                            transferBetweenCustomers(fromId, toId, num, date, desc || 'Internal Transfer');
+                            onClose();
                         }}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg cursor-pointer shadow-sm transition-colors"
                     >

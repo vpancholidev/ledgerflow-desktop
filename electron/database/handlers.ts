@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 import { db, saveDb } from './index';
 import { customers, transactions, appSettings } from './schema';
 import crypto from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { app, dialog, BrowserWindow, shell } from 'electron';
@@ -239,6 +239,68 @@ export function registerHandlers() {
         });
         saveDb();
         return id;
+    });
+
+    ipcMain.handle('delete-transaction', async (_, id) => {
+        const result = await db.select().from(transactions).where(eq(transactions.id, id));
+        if (result.length > 0) {
+            const t = result[0];
+            await db.delete(transactions).where(eq(transactions.id, id));
+
+            if (t.counterpartyId) {
+                const mirrorType = t.type === 'credit' ? 'debit' : 'credit';
+                const peerResults = await db.select().from(transactions).where(
+                    and(
+                        eq(transactions.customerId, t.counterpartyId),
+                        eq(transactions.counterpartyId, t.customerId),
+                        eq(transactions.amount, t.amount),
+                        eq(transactions.type, mirrorType),
+                        eq(transactions.date, t.date)
+                    )
+                );
+                if (peerResults.length > 0) {
+                    await db.delete(transactions).where(eq(transactions.id, peerResults[0].id));
+                }
+            }
+            saveDb();
+        }
+        return true;
+    });
+
+    ipcMain.handle('update-transaction', async (_, id, data) => {
+        const result = await db.select().from(transactions).where(eq(transactions.id, id));
+        if (result.length > 0) {
+            const t = result[0];
+            const parsedData: any = { ...data };
+            if (data.date) parsedData.date = new Date(data.date);
+            await db.update(transactions).set(parsedData).where(eq(transactions.id, id));
+
+            if (t.counterpartyId) {
+                const mirrorType = t.type === 'credit' ? 'debit' : 'credit';
+                const peerResults = await db.select().from(transactions).where(
+                    and(
+                        eq(transactions.customerId, t.counterpartyId),
+                        eq(transactions.counterpartyId, t.customerId),
+                        eq(transactions.amount, t.amount),
+                        eq(transactions.type, mirrorType),
+                        eq(transactions.date, t.date)
+                    )
+                );
+                if (peerResults.length > 0) {
+                    const peerData: any = {};
+                    if (data.amount) peerData.amount = data.amount;
+                    if (data.date) peerData.date = new Date(data.date);
+                    if (data.desc) {
+                        peerData.desc = data.desc;
+                        if (data.desc.includes('Transfer in:')) peerData.desc = data.desc.replace('Transfer in:', 'Transfer out:');
+                        else if (data.desc.includes('Transfer out:')) peerData.desc = data.desc.replace('Transfer out:', 'Transfer in:');
+                    }
+                    await db.update(transactions).set(peerData).where(eq(transactions.id, peerResults[0].id));
+                }
+            }
+            saveDb();
+        }
+        return true;
     });
 
     // Settings

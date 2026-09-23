@@ -1,7 +1,8 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowRightLeft } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ArrowRightLeft, TrendingUp, Users } from 'lucide-react';
 import { useAppContext } from '../store';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { TransferModal } from './modals/TransferModal';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function Dashboard() {
     const { customers, transactions } = useAppContext();
@@ -12,14 +13,34 @@ export function Dashboard() {
     const totalPayables = customers.filter(c => c.balance < 0).reduce((acc, c) => acc + Math.abs(c.balance), 0);
     const activeCustomers = customers.length;
 
+    // Chart Data Generation
+    const chartData = useMemo(() => {
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            const dayTxns = transactions.filter(t => new Date(t.date).toDateString() === d.toDateString());
+            const cashIn = dayTxns.filter(t => t.type === 'credit').reduce((acc, t) => acc + t.amount, 0);
+            const cashOut = dayTxns.filter(t => t.type === 'debit').reduce((acc, t) => acc + t.amount, 0);
+
+            data.push({ name: dateStr, In: cashIn, Out: cashOut });
+        }
+        return data;
+    }, [transactions]);
+
+    // Top Debtors (People who owe me the most)
+    const topDebtors = [...customers].filter(c => c.balance > 0).sort((a, b) => b.balance - a.balance).slice(0, 4);
+
     const recentTransactions = [...transactions]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
     return (
-        <div className="w-full max-w-5xl mx-auto relative">
+        <div className="w-full max-w-6xl mx-auto relative pb-10">
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Dashboard Insights</h1>
                 <button
                     onClick={() => setShowTransfer(true)}
                     className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-emerald-600/20"
@@ -29,15 +50,70 @@ export function Dashboard() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Core Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <StatCard title="Total Receivables" amount={`₹ ${totalReceivables.toLocaleString()}`} type="positive" />
                 <StatCard title="Total Payables" amount={`₹ ${totalPayables.toLocaleString()}`} type="negative" />
-                <StatCard title="Active Customers" amount={activeCustomers} type="neutral" />
+                <StatCard title="Total Accounts" amount={activeCustomers} type="neutral" />
+                <StatCard title="7-Day Actions" amount={transactions.filter(t => new Date(t.date).getTime() > Date.now() - 7 * 86400000).length} type="neutral" />
             </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+                {/* Cash Flow Chart */}
+                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
+                    <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <TrendingUp className="text-emerald-500" size={18} />
+                        7-Day Cash Flow Velocity
+                    </h2>
+                    <div className="flex-1 min-h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                                <YAxis tickFormatter={(val) => val >= 1000 ? `₹${(val / 1000)}k` : `₹${val}`} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                                <Tooltip
+                                    cursor={{ fill: '#f8fafc' }}
+                                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    formatter={(value: number) => [`₹ ${value.toLocaleString()}`, undefined]}
+                                />
+                                <Bar dataKey="In" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
+                                <Bar dataKey="Out" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={12} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Top Debtors List */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-2">
+                        <Users className="text-blue-500" size={18} />
+                        <h2 className="text-base font-bold text-slate-800">Top Receivables (To Collect)</h2>
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                        {topDebtors.map((c, i) => (
+                            <div key={c.id} className={`px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors ${i !== topDebtors.length - 1 ? 'border-b border-slate-50' : ''}`}>
+                                <div>
+                                    <div className="font-semibold text-slate-800">{c.name}</div>
+                                    <div className="text-xs text-slate-500">{c.phone}</div>
+                                </div>
+                                <div className="font-bold text-emerald-600">
+                                    ₹ {c.balance.toLocaleString()}
+                                </div>
+                            </div>
+                        ))}
+                        {topDebtors.length === 0 && (
+                            <div className="m-auto text-center text-slate-400 p-6 text-sm">
+                                All clear! No customers currently owe you any money.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Global Activity */}
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm flex flex-col">
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
-                    <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Recent Transactions</h2>
+                    <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Most Recent Global Network Transactions</h2>
                 </div>
                 <div className="divide-y divide-slate-100">
                     {recentTransactions.map(t => {
@@ -45,7 +121,7 @@ export function Dashboard() {
                         return (
                             <TransactionRow
                                 key={t.id}
-                                name={customer ? customer.name : 'System'}
+                                name={customer ? customer.name : 'System Generated'}
                                 date={new Date(t.date).toLocaleDateString()}
                                 amount={`₹ ${t.amount.toLocaleString()}`}
                                 type={t.type}
@@ -53,7 +129,7 @@ export function Dashboard() {
                         )
                     })}
                     {recentTransactions.length === 0 && (
-                        <div className="px-6 py-8 text-center text-slate-500">No transactions recorded yet.</div>
+                        <div className="px-6 py-8 text-center text-slate-500">No transactions recorded inside the network yet.</div>
                     )}
                 </div>
             </div>

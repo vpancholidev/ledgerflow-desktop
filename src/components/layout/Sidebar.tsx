@@ -8,7 +8,7 @@ export function Sidebar({ currentTab, onTabChange, onOpenReport }: { currentTab:
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" active={currentTab === 'Dashboard'} onClick={() => onTabChange('Dashboard')} />
                     <SidebarItem icon={Users} label="Customers" active={currentTab === 'Customers'} onClick={() => onTabChange('Customers')} />
                     <SidebarItem icon={BookText} label="Day Book" active={currentTab === 'Daybook'} onClick={() => onTabChange('Daybook')} />
-                    <SidebarItem icon={FileText} label="Generate Report" active={false} onClick={onOpenReport} />
+                    <SidebarItem icon={FileText} label="Generate Confirmation" active={false} onClick={onOpenReport} />
                 </nav>
             </div>
             <div className="mt-auto p-4 border-t border-slate-100 bg-slate-50/50">

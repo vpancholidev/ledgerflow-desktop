@@ -19,6 +19,8 @@ interface ElectronAPI {
     updateCustomer: (id: string, data: any) => Promise<boolean>;
     getTransactions: () => Promise<any[]>;
     addTransaction: (data: any) => Promise<string>;
+    deleteTransaction: (id: string) => Promise<boolean>;
+    updateTransaction: (id: string, data: any) => Promise<boolean>;
     getSettings: () => Promise<any[]>;
     saveSetting: (key: string, value: string) => Promise<boolean>;
     // Auto-Updater
