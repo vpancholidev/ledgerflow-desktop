@@ -34,9 +34,7 @@ export function TitleBar() {
             style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
             <div className="text-sm font-bold text-emerald-600 tracking-tight flex items-center gap-2">
-                <div className="w-5 h-5 bg-emerald-100 rounded-md flex items-center justify-center">
-                    <div className="w-3 h-3 border-2 border-emerald-600 rounded-br-lg" />
-                </div>
+                <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
                 LedgerFlow
             </div>
             <div
