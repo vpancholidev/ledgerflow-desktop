@@ -74,7 +74,7 @@ export function Dashboard() {
                                 <Tooltip
                                     cursor={{ fill: '#f8fafc' }}
                                     contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value: number) => [`₹ ${value.toLocaleString()}`, undefined]}
+                                    formatter={(value: any) => [`₹ ${Number(value).toLocaleString()}`, '']}
                                 />
                                 <Bar dataKey="In" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
                                 <Bar dataKey="Out" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={12} />
