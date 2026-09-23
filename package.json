@@ -1,7 +1,7 @@
 {
   "name": "ledgerflow-desktop",
   "private": true,
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "LedgerFlow Desktop - Offline-first financial ledger application",
   "author": "Vaibhav <vaibhav@example.com>",
   "main": "dist-electron/main.js",
