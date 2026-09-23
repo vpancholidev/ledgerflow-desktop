@@ -1,20 +1,24 @@
-name: Build and Release
+name: Zero-Touch Auto-Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  auto-release:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,42 +26,34 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Auto-bump version
+        id: bump
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch -m "chore: auto-bump version to %s [skip ci]"
+          git push origin master --follow-tags
+          $VERSION = node -p "require('./package.json').version"
+          echo "NEW_APP_VERSION=$VERSION" >> $env:GITHUB_ENV
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Build app
+      - name: Build React Interface
         run: npm run build:vite
 
-      - name: Build installer
+      - name: Build Electron Exe
         run: npx electron-builder --win --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload installer artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: installer
-          path: dist-release/
-          retention-days: 7
-
-  release:
-    needs: build
-    runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Download installer artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: installer
-          path: dist-release/
-
-      - name: Create Release
+      - name: Push Stable Release Network
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: v${{ env.NEW_APP_VERSION }}
+          name: LedgerFlow Client v${{ env.NEW_APP_VERSION }}
+          generate_release_notes: true
           files: |
             dist-release/*.exe
             dist-release/*.blockmap
             dist-release/*.yml
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
