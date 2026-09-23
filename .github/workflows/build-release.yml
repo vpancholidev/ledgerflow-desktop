@@ -42,7 +42,7 @@ jobs:
       - name: Build React Interface
         run: npm run build:vite
 
-      - name: Build Electron Exe & Push Release natively
+      - name: Build Electron Exe & Push Natively
         run: npx electron-builder --win --x64 -p always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
