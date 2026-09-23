@@ -22,6 +22,15 @@ function AppContent() {
   const [hasPin, setHasPin] = useState(false);
   const [pinUnlocked, setPinUnlocked] = useState(false);
 
+  // Immersive Splash Screen Timeout
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Force the splash animation to run for at least 2.8 seconds
+    const timer = setTimeout(() => setShowSplash(false), 2800);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (window.electronAPI) {
       window.electronAPI.getAuthStatus().then(status => {
@@ -56,11 +65,52 @@ function AppContent() {
     setCurrentTab('CustomerDetails');
   };
 
-  if (!isLoaded || !authCheckDone) {
+  if (!isLoaded || !authCheckDone || showSplash) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-        <div className="text-slate-500 font-medium tracking-wide">Booting Secure Local Database...</div>
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center overflow-hidden relative select-none">
+        {/* Ambient Dark Glow */}
+        <div className="absolute w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse"></div>
+
+        {/* Core Animated Logo Cluster */}
+        <div className="relative z-10 flex flex-col items-center animate-[pulse_2s_ease-in-out_infinite]">
+          <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-emerald-600/40">
+            <div className="w-10 h-10 border-[5px] border-white rounded-br-2xl" />
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-3 drop-shadow-lg">
+            Ledger<span className="text-emerald-400">Flow</span>
+          </h1>
+          <p className="text-emerald-200/60 font-semibold tracking-widest text-xs uppercase letter">
+            {authCheckDone ? 'Starting Interface...' : 'Booting Financial Engine...'}
+          </p>
+        </div>
+
+        {/* Progressive Load Bar */}
+        <div className="absolute bottom-20 w-64 h-1 bg-slate-800 rounded-full overflow-hidden shadow-inner">
+          <div className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgb(16,185,129)]" style={{ animation: "progress 2.8s ease-in-out forwards" }} />
+        </div>
+
+        {/* Agency Branding Footer */}
+        <div className="absolute bottom-6 flex flex-col items-center opacity-0" style={{ animation: "fadeUpIn 1.2s ease-out 0.8s forwards" }}>
+          <span className="text-emerald-500/50 text-[10px] font-bold tracking-[0.25em] uppercase mb-0.5">Developed By</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-300 via-white to-slate-300 font-bold tracking-widest text-sm drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+            CODCLAW TECHNOLOGIES
+          </span>
+        </div>
+
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes progress {
+                0% { width: 0%; opacity: 0; }
+                10% { opacity: 1; }
+                50% { width: 60%; }
+                80% { width: 90%; }
+                100% { width: 100%; opacity: 0; }
+            }
+            @keyframes fadeUpIn {
+                0% { transform: translateY(15px) scale(0.95); opacity: 0; filter: blur(4px); }
+                100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
+            }
+        `}} />
       </div>
     );
   }
