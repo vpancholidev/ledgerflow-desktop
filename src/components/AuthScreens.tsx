@@ -28,7 +28,7 @@ export function ActivationScreen({ onActivated }: { onActivated: () => void }) {
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500" />
 
-                <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6 drop-shadow-sm" />
+                <img src="./logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6 drop-shadow-sm" />
 
                 <h1 className="text-2xl font-bold text-center text-slate-900 mb-2">Software Not Activated</h1>
                 <p className="text-slate-500 text-center mb-8 text-sm">
@@ -86,7 +86,7 @@ export function CreatePinScreen({ onCreated }: { onCreated: () => void }) {
     return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 max-w-sm w-full text-center">
-                <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6 drop-shadow-sm" />
+                <img src="./logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6 drop-shadow-sm" />
                 <h1 className="text-2xl font-bold text-slate-900 mb-2">Create Security PIN</h1>
                 <p className="text-slate-500 mb-8 text-sm">Create a daily PIN to prevent unauthorized staff from accessing your documents.</p>
 
@@ -134,7 +134,7 @@ export function EnterPinScreen({ onUnlocked, onReset }: { onUnlocked: () => void
     return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
-                <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6 drop-shadow-sm" />
+                <img src="./logo.png" alt="Logo" className="w-20 h-20 object-contain mx-auto mb-6 drop-shadow-sm" />
                 <h1 className="text-3xl font-extrabold text-slate-900 mb-2">LedgerFlow Secured</h1>
 
                 {isResetMode ? (

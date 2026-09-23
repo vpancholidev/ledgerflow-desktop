@@ -42,18 +42,7 @@ jobs:
       - name: Build React Interface
         run: npm run build:vite
 
-      - name: Build Electron Exe
-        run: npx electron-builder --win --x64
+      - name: Build Electron Exe & Push Natively
+        run: npx electron-builder --win --x64 -p always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push Stable Release Network
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ env.NEW_APP_VERSION }}
-          name: LedgerFlow Client v${{ env.NEW_APP_VERSION }}
-          generate_release_notes: true
-          files: |
-            dist-release/*.exe
-            dist-release/*.blockmap
-            dist-release/*.yml
