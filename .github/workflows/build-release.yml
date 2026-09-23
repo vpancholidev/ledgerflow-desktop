@@ -54,6 +54,6 @@ jobs:
           name: LedgerFlow Client v${{ env.NEW_APP_VERSION }}
           generate_release_notes: true
           files: |
-            dist-release/*.exe
-            dist-release/*.blockmap
-            dist-release/*.yml
+            release-build/*.exe
+            release-build/*.blockmap
+            release-build/*.yml
