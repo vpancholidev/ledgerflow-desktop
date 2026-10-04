@@ -52,6 +52,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         titleBarStyle: 'hidden',
+        icon: path.join(process.env.VITE_PUBLIC || '', 'logo.png'),
         webPreferences: {
             sandbox: false,
             contextIsolation: true,
