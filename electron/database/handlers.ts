@@ -392,11 +392,11 @@ export async function performAutoBackup() {
             const backupFileName = `ledgerflow_data_${timestamp}.db`;
 
             // 1. Upload new timestamped backup
-            const { error: dbErr } = await supabase.storage.from('BACKUPS').upload(`${machineId}/database/${backupFileName}`, dbBuffer);
+            const { error: dbErr } = await supabase.storage.from('backups').upload(`${machineId}/database/${backupFileName}`, dbBuffer);
             if (dbErr) throw dbErr;
 
             // 2. Fetch existing backups and enforce 15-revision strategy
-            const { data: files, error: listErr } = await supabase.storage.from('BACKUPS').list(`${machineId}/database/`);
+            const { data: files, error: listErr } = await supabase.storage.from('backups').list(`${machineId}/database/`);
 
             if (!listErr && files) {
                 // Filter actual database files & sort by newest first
@@ -406,7 +406,7 @@ export async function performAutoBackup() {
                 // If there are more than 15 files, slice the rest and delete them
                 if (sortedFiles.length > 15) {
                     const toDelete = sortedFiles.slice(15).map(f => `${machineId}/database/${f.name}`);
-                    await supabase.storage.from('BACKUPS').remove(toDelete);
+                    await supabase.storage.from('backups').remove(toDelete);
                 }
             }
         }
@@ -416,7 +416,7 @@ export async function performAutoBackup() {
             for (const file of files) {
                 const filePath = path.join(uploadsDir, file);
                 const fileBuffer = fs.readFileSync(filePath);
-                await supabase.storage.from('BACKUPS').upload(`${machineId}/images/${file}`, fileBuffer, { upsert: true });
+                await supabase.storage.from('backups').upload(`${machineId}/images/${file}`, fileBuffer, { upsert: true });
             }
         }
     } catch (e: any) {
