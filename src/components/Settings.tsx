@@ -58,9 +58,11 @@ export function Settings() {
             }
             if (res && res.error) {
                 setUpdateStatus('error');
+                setSyncMessage(`OTA Error: ${res.error}`); // Use sync message block to display the error string temporarily
             }
-        } catch {
+        } catch (e: any) {
             setUpdateStatus('error');
+            setSyncMessage(`OTA Fatal: ${e.message}`);
         }
     };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { AppProvider, useAppContext } from './store'
 import { Shell } from './components/layout/Shell'
 import { Dashboard } from './components/Dashboard'
@@ -196,9 +197,43 @@ function AppContent() {
 }
 
 function App() {
+  const [globalAlert, setGlobalAlert] = useState<string | null>(null);
+
+  useEffect(() => {
+    const originalAlert = window.alert;
+    window.alert = (message?: any) => {
+      setGlobalAlert(message ? String(message) : '');
+    };
+    return () => {
+      window.alert = originalAlert;
+    };
+  }, []);
+
   return (
     <AppProvider>
       <AppContent />
+      {globalAlert !== null && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-sm shadow-2xl flex flex-col overflow-hidden text-center animate-in fade-in zoom-in duration-200">
+            <div className="p-8">
+              <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                <AlertCircle className="text-red-500" size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Attention</h2>
+              <p className="text-slate-600 font-medium">{globalAlert}</p>
+            </div>
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+              <button
+                onClick={() => setGlobalAlert(null)}
+                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-xl transition-colors cursor-pointer shadow-sm"
+                autoFocus
+              >
+                Acknowledge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppProvider>
   )
 }

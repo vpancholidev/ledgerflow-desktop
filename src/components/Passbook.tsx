@@ -11,6 +11,7 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
     const { customers, transactions, addTransaction, deleteTransaction, updateTransaction, companyName } = useAppContext();
     const [modalType, setModalType] = useState<'in' | 'out' | null>(null);
     const [editTxn, setEditTxn] = useState<Transaction | null>(null);
+    const [txnToDelete, setTxnToDelete] = useState<Transaction | null>(null);
     const [search, setSearch] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
@@ -174,11 +175,7 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
                                             <button onClick={() => setEditTxn(t)} className="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="Edit Transaction">
                                                 <Edit2 size={16} />
                                             </button>
-                                            <button onClick={() => {
-                                                if (window.confirm("Are you sure you want to permanently delete this transaction?\nIf this was a Transfer, the other corresponding side will automatically be deleted to maintain ledger parity.")) {
-                                                    deleteTransaction(t.id);
-                                                }
-                                            }} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Delete Transaction">
+                                            <button onClick={() => setTxnToDelete(t)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Delete Transaction">
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
@@ -210,6 +207,34 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
                     onClose={() => setEditTxn(null)}
                     onSave={(amt, date, desc) => updateTransaction(editTxn.id, { amount: amt, date: new Date(date).toISOString(), desc })}
                 />
+            )}
+
+            {txnToDelete && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden text-left">
+                        <div className="p-6">
+                            <h2 className="text-xl font-bold text-slate-900 mb-2">Delete Transaction</h2>
+                            <p className="text-slate-600 text-sm">Are you sure you want to permanently delete this transaction?<br /><br />If this was a Transfer, the other corresponding side will automatically be deleted to maintain ledger parity.</p>
+                        </div>
+                        <div className="p-6 border-t border-slate-200 flex gap-3 bg-slate-50/50">
+                            <button
+                                onClick={() => setTxnToDelete(null)}
+                                className="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    deleteTransaction(txnToDelete.id);
+                                    setTxnToDelete(null);
+                                }}
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
