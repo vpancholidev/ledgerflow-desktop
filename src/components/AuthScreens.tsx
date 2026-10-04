@@ -1,5 +1,35 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
+
+export function RevokedScreen() {
+    return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden text-center">
+                <div className="absolute top-0 left-0 w-full h-1 bg-red-600 animate-pulse" />
+
+                <div className="mx-auto bg-red-50 text-red-600 w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                    <Lock size={32} />
+                </div>
+
+                <h1 className="text-2xl font-bold text-slate-900 mb-2">Access Revoked</h1>
+                <p className="text-slate-600 mb-8 text-sm font-medium">
+                    Your software license has expired or been paused by the administrator.
+                </p>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6 text-sm text-slate-700">
+                    Please contact the <b className="text-slate-900">Codclaw Technologies</b> team for support to resolve this issue and restore your access.
+                </div>
+
+                <button
+                    onClick={() => window.location.reload()}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-lg transition-colors cursor-pointer"
+                >
+                    Retry Connection
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export function ActivationScreen({ onActivated }: { onActivated: () => void }) {
     const [machineId, setMachineId] = useState('LOADING...');

@@ -10,6 +10,14 @@ import os from 'os';
 import { createClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
 import { machineIdSync } from 'node-machine-id';
+
+// ============================================================================
+// CODCLAW CENTRAL KILL-SWITCH CREDENTIALS (SUPPLIED BY GITHUB SECRETS)
+// ============================================================================
+const CODCLAW_CENTRAL_URL = (import.meta as any).env.VITE_CODCLAW_URL || '';
+const CODCLAW_CENTRAL_KEY = (import.meta as any).env.VITE_CODCLAW_KEY || '';
+// ============================================================================
+
 if (typeof globalThis.WebSocket === 'undefined') (globalThis as any).WebSocket = WebSocket;
 
 export function registerHandlers() {
@@ -96,6 +104,49 @@ export function registerHandlers() {
         return hash.match(/.{4}/g)?.join('-') || '';
     };
 
+    const syncKillSwitch = async (machineId: string) => {
+        if (!CODCLAW_CENTRAL_URL.startsWith('https://')) return; // Opt-out/Dev fallback
+
+        try {
+            const centralClient = createClient(CODCLAW_CENTRAL_URL, CODCLAW_CENTRAL_KEY, { auth: { persistSession: false } });
+
+            // Try to find the machine in the central database
+            const { data, error } = await centralClient.from('licenses')
+                .select('*').eq('machine_id', machineId).single();
+
+            if (error && error.code === 'PGRST116') {
+                // Not found! Let's auto-register it.
+                // We fetch the local company name for reference if it exists.
+                const orgRec = await db.select().from(appSettings).where(eq(appSettings.key, 'companyName'));
+                const orgName = orgRec[0]?.value || 'Unknown Client';
+                await centralClient.from('licenses').insert({
+                    machine_id: machineId,
+                    client_name: orgName,
+                    is_active: true
+                });
+                // Ensure it's not revoked locally
+                await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+            } else if (data) {
+                // Record found. Is it revoked?
+                if (data.is_active === false) {
+                    await db.insert(appSettings).values({ key: 'cloudRevoked', value: 'true' })
+                        .onConflictDoUpdate({ target: appSettings.key, set: { value: 'true' } });
+
+                    saveDb();
+                    // Send instant lockout signal to UI
+                    const wins = BrowserWindow.getAllWindows();
+                    if (wins.length > 0) wins[0].webContents.send('remote-revocation');
+                } else {
+                    // It's active! Ensure local revoked flag is cleared.
+                    await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                    saveDb();
+                }
+            }
+        } catch (e) {
+            console.error('Kill-Switch Sync Failed (Offline or Central DB Down)', e);
+        }
+    };
+
     ipcMain.handle('get-machine-id', async () => {
         return getMachineId();
     });
@@ -103,12 +154,19 @@ export function registerHandlers() {
     ipcMain.handle('get-auth-status', async () => {
         const licenseRec = await db.select().from(appSettings).where(eq(appSettings.key, 'licenseKey'));
         const pinRec = await db.select().from(appSettings).where(eq(appSettings.key, 'dailyPin'));
+        const revokedRec = await db.select().from(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
 
         const storedLicense = licenseRec[0]?.value;
         const isLicensed = storedLicense === generateValidLicense();
         const hasPin = !!pinRec[0]?.value;
+        const isCloudRevoked = revokedRec[0]?.value === 'true';
 
-        return { isLicensed, hasPin };
+        // Background Check (Fire & Forget heartbeat)
+        if (isLicensed) {
+            syncKillSwitch(getMachineId());
+        }
+
+        return { isLicensed, hasPin, isCloudRevoked };
     });
 
     ipcMain.handle('activate-license', async (_, key: string) => {
@@ -121,6 +179,8 @@ export function registerHandlers() {
                 await db.insert(appSettings).values({ key: 'licenseKey', value: expected });
             }
             saveDb();
+            // Force a sync right away upon activation
+            syncKillSwitch(getMachineId());
             return true;
         }
         return false;

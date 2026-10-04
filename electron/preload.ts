@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onUpdateDownloaded: (callback: (info: any) => void) => ipcRenderer.on('update-downloaded', callback),
     onUpdateError: (callback: (error: any) => void) => ipcRenderer.on('update-error', callback),
     onUpdateProgress: (callback: (progress: any) => void) => ipcRenderer.on('update-progress', callback),
+    onRemoteRevocation: (callback: () => void) => ipcRenderer.on('remote-revocation', callback),
 
     // Window controls
     minimize: () => ipcRenderer.invoke('window-minimize'),

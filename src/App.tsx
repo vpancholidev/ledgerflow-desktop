@@ -8,7 +8,7 @@ import { Passbook } from './components/Passbook'
 import { Daybook } from './components/Daybook'
 import { Settings } from './components/Settings'
 import { CustomerDetails } from './components/CustomerDetails'
-import { ActivationScreen, CreatePinScreen, EnterPinScreen } from './components/AuthScreens'
+import { ActivationScreen, CreatePinScreen, EnterPinScreen, RevokedScreen } from './components/AuthScreens'
 import { ConfirmationReportModal } from './components/modals/ConfirmationReportModal'
 
 function AppContent() {
@@ -20,6 +20,7 @@ function AppContent() {
 
   const [authCheckDone, setAuthCheckDone] = useState(false);
   const [isLicensed, setIsLicensed] = useState(false);
+  const [isCloudRevoked, setIsCloudRevoked] = useState(false);
   const [hasPin, setHasPin] = useState(false);
   const [pinUnlocked, setPinUnlocked] = useState(false);
 
@@ -36,12 +37,17 @@ function AppContent() {
     if (window.electronAPI) {
       window.electronAPI.getAuthStatus().then(status => {
         setIsLicensed(status.isLicensed);
+        setIsCloudRevoked(status.isCloudRevoked);
         setHasPin(status.hasPin);
         setAuthCheckDone(true);
+      });
+      window.electronAPI.onRemoteRevocation(() => {
+        setIsCloudRevoked(true);
       });
     } else {
       // Fallback bypass for browser testing
       setIsLicensed(true);
+      setIsCloudRevoked(false);
       setPinUnlocked(true);
       setAuthCheckDone(true);
     }
@@ -112,6 +118,10 @@ function AppContent() {
         `}} />
       </div>
     );
+  }
+
+  if (isCloudRevoked) {
+    return <RevokedScreen />
   }
 
   if (!isLicensed) {

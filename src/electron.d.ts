@@ -4,7 +4,7 @@ interface ElectronAPI {
     getFileDir: () => Promise<string>;
     openFile: (filename: string) => Promise<void>;
     getMachineId: () => Promise<string>;
-    getAuthStatus: () => Promise<{ isLicensed: boolean, hasPin: boolean }>;
+    getAuthStatus: () => Promise<{ isLicensed: boolean, hasPin: boolean, isCloudRevoked: boolean }>;
     activateLicense: (key: string) => Promise<boolean>;
     setPin: (pin: string) => Promise<boolean>;
     verifyPin: (pin: string) => Promise<boolean>;
@@ -32,6 +32,7 @@ interface ElectronAPI {
     onUpdateDownloaded: (callback: (info: any) => void) => void;
     onUpdateError: (callback: (error: any) => void) => void;
     onUpdateProgress: (callback: (progress: any) => void) => void;
+    onRemoteRevocation: (callback: () => void) => void;
 
     // Window controls
     minimize: () => Promise<void>;
