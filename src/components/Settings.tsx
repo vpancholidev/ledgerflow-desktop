@@ -8,8 +8,6 @@ export function Settings() {
     const [saved, setSaved] = useState(false);
 
     // Supabase States
-    const [supabaseUrl, setSupabaseUrl] = useState('');
-    const [supabaseKey, setSupabaseKey] = useState('');
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncMessage, setSyncMessage] = useState('');
 
@@ -20,11 +18,6 @@ export function Settings() {
 
     useEffect(() => {
         if (window.electronAPI) {
-            window.electronAPI.getSupabaseConfig().then(config => {
-                setSupabaseUrl(config.url);
-                setSupabaseKey(config.key);
-            });
-
             // Initialize Auto-Updater Listeners once
             window.electronAPI.onUpdateAvailable((info) => {
                 setUpdateStatus('downloading');
@@ -73,28 +66,15 @@ export function Settings() {
 
     const handleSave = async () => {
         setCompanyName(name);
-        if (window.electronAPI) {
-            await window.electronAPI.saveSupabaseConfig({ url: supabaseUrl, key: supabaseKey });
-        }
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
     }
 
     const handleBackup = async () => {
-        if (!supabaseUrl || !supabaseKey) {
-            alert("Please enter Supabase URL and Key first.");
-            return;
-        }
-
-        // Auto-save the keys so the background task has them when the app closes!
-        if (window.electronAPI) {
-            await window.electronAPI.saveSupabaseConfig({ url: supabaseUrl, key: supabaseKey });
-        }
-
         setIsSyncing(true);
         setSyncMessage('');
         try {
-            const result = await window.electronAPI?.backupToCloud({ url: supabaseUrl, key: supabaseKey });
+            const result = await window.electronAPI?.backupToCloud({});
             if (result?.success) {
                 setSyncMessage('Backup completed successfully!');
             } else {
@@ -145,30 +125,8 @@ export function Settings() {
                     <h2 className="text-lg font-semibold text-slate-900">Cloud Backup Integration (Supabase)</h2>
                 </div>
                 <p className="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">
-                    Configure your free Supabase bucket to automatically sync your local SQLite database and client files securely to the cloud. Make sure the storage bucket is named <b>backups</b>.
+                    Your financial data and documents are seamlessly synchronized and encrypted on Codclaw's central servers for your peace of mind.
                 </p>
-
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Supabase Project URL</label>
-                    <input
-                        type="text"
-                        value={supabaseUrl}
-                        onChange={e => setSupabaseUrl(e.target.value)}
-                        placeholder="https://xxxxxx.supabase.co"
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500 shadow-sm font-mono text-sm"
-                    />
-                </div>
-
-                <div className="mb-8">
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Supabase Anon Key</label>
-                    <input
-                        type="password"
-                        value={supabaseKey}
-                        onChange={e => setSupabaseKey(e.target.value)}
-                        placeholder="eyJhb..."
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500 shadow-sm font-mono text-xs tracking-wider"
-                    />
-                </div>
 
                 <button
                     onClick={handleBackup}

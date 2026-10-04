@@ -20,6 +20,17 @@ const CODCLAW_CENTRAL_KEY = (import.meta as any).env.VITE_CODCLAW_KEY || '';
 
 if (typeof globalThis.WebSocket === 'undefined') (globalThis as any).WebSocket = WebSocket;
 
+export const getMachineId = () => {
+    try {
+        const mId = machineIdSync();
+        return crypto.createHash('sha256').update(mId).digest('hex').substring(0, 12).toUpperCase();
+    } catch (e) {
+        const cpus = os.cpus();
+        const raw = `${cpus[0].model}-${os.totalmem()}`;
+        return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 12).toUpperCase();
+    }
+};
+
 export function registerHandlers() {
     const uploadsDir = path.join(app.getPath('userData'), 'uploads');
     if (!fs.existsSync(uploadsDir)) {
@@ -86,16 +97,6 @@ export function registerHandlers() {
     // ----------------------------------------------------
     // SECURITY & LICENSING (PHASE 4)
     // ----------------------------------------------------
-    const getMachineId = () => {
-        try {
-            const mId = machineIdSync();
-            return crypto.createHash('sha256').update(mId).digest('hex').substring(0, 12).toUpperCase();
-        } catch (e) {
-            const cpus = os.cpus();
-            const raw = `${cpus[0].model}-${os.totalmem()}`;
-            return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 12).toUpperCase();
-        }
-    };
 
     const generateValidLicense = () => {
         const secretSalt = "VAIBHAV_SOFTWARE_LOCKED_2026_X99";
@@ -214,9 +215,9 @@ export function registerHandlers() {
         return false;
     });
 
-    ipcMain.handle('backup-to-cloud', async (_, { url, key }) => {
+    ipcMain.handle('backup-to-cloud', async () => {
         try {
-            await performAutoBackup(url, key);
+            await performAutoBackup();
             return { success: true };
         } catch (e: any) {
             console.error("Cloud Backup Error", e);
@@ -224,21 +225,6 @@ export function registerHandlers() {
         }
     });
 
-
-    ipcMain.handle('save-supabase-config', async (_, { url, key }) => {
-        await db.delete(appSettings).where(eq(appSettings.key, 'supabaseUrl'));
-        await db.delete(appSettings).where(eq(appSettings.key, 'supabaseKey'));
-        if (url) await db.insert(appSettings).values({ key: 'supabaseUrl', value: url });
-        if (key) await db.insert(appSettings).values({ key: 'supabaseKey', value: key });
-        saveDb();
-        return true;
-    });
-
-    ipcMain.handle('get-supabase-config', async () => {
-        const urlRec = await db.select().from(appSettings).where(eq(appSettings.key, 'supabaseUrl'));
-        const keyRec = await db.select().from(appSettings).where(eq(appSettings.key, 'supabaseKey'));
-        return { url: urlRec[0]?.value || '', key: keyRec[0]?.value || '' };
-    });
 
     // ----------------------------------------------------
     // CUSTOMERS
@@ -378,19 +364,13 @@ export function registerHandlers() {
     });
 }
 
-export async function performAutoBackup(forceUrl?: string, forceKey?: string) {
+export async function performAutoBackup() {
     try {
-        let url = forceUrl;
-        let key = forceKey;
+        const url = CODCLAW_CENTRAL_URL;
+        const key = CODCLAW_CENTRAL_KEY;
+        const machineId = getMachineId();
 
-        if (!url || !key) {
-            const urlRec = await db.select().from(appSettings).where(eq(appSettings.key, 'supabaseUrl'));
-            const keyRec = await db.select().from(appSettings).where(eq(appSettings.key, 'supabaseKey'));
-            url = urlRec[0]?.value;
-            key = keyRec[0]?.value;
-        }
-
-        if (!url || !key) return; // Do not auto-backup if not configured
+        if (!url || !key || !url.startsWith('https://')) return; // Opt-out/Dev fallback
 
         const supabase = createClient(url, key, {
             auth: { persistSession: false }
@@ -400,7 +380,7 @@ export async function performAutoBackup(forceUrl?: string, forceKey?: string) {
 
         if (fs.existsSync(dbPath)) {
             const dbBuffer = fs.readFileSync(dbPath);
-            const { error: dbErr } = await supabase.storage.from('backups').upload('database/ledgerflow_data.db', dbBuffer, { upsert: true });
+            const { error: dbErr } = await supabase.storage.from('backups').upload(`${machineId}/database/ledgerflow_data.db`, dbBuffer, { upsert: true });
             if (dbErr) throw dbErr;
         }
 
@@ -409,7 +389,7 @@ export async function performAutoBackup(forceUrl?: string, forceKey?: string) {
             for (const file of files) {
                 const filePath = path.join(uploadsDir, file);
                 const fileBuffer = fs.readFileSync(filePath);
-                await supabase.storage.from('backups').upload(`images/${file}`, fileBuffer, { upsert: true });
+                await supabase.storage.from('backups').upload(`${machineId}/images/${file}`, fileBuffer, { upsert: true });
             }
         }
     } catch (e: any) {

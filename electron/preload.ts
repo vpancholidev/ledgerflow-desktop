@@ -14,9 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     verifyPin: (pin: string) => ipcRenderer.invoke('verify-pin', pin),
     resetPinViaLicense: (key: string) => ipcRenderer.invoke('reset-pin-via-license', key),
 
-    backupToCloud: (config: any) => ipcRenderer.invoke('backup-to-cloud', config),
-    saveSupabaseConfig: (config: any) => ipcRenderer.invoke('save-supabase-config', config),
-    getSupabaseConfig: () => ipcRenderer.invoke('get-supabase-config'),
+    backupToCloud: () => ipcRenderer.invoke('backup-to-cloud'),
 
     getCustomers: () => ipcRenderer.invoke('get-customers'),
     addCustomer: (data: any) => ipcRenderer.invoke('add-customer', data),

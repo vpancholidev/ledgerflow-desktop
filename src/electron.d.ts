@@ -10,9 +10,7 @@ interface ElectronAPI {
     verifyPin: (pin: string) => Promise<boolean>;
     resetPinViaLicense: (key: string) => Promise<boolean>;
 
-    backupToCloud: (config: { url: string, key: string }) => Promise<{ success: boolean, error?: string }>;
-    saveSupabaseConfig: (config: { url: string, key: string }) => Promise<boolean>;
-    getSupabaseConfig: () => Promise<{ url: string, key: string }>;
+    backupToCloud: () => Promise<{ success: boolean, error?: string }>;
 
     getCustomers: () => Promise<any[]>;
     addCustomer: (data: any) => Promise<string>;
