@@ -123,11 +123,19 @@ export function registerHandlers() {
                 await centralClient.from('licenses').insert({
                     machine_id: machineId,
                     client_name: orgName,
-                    is_active: true
+                    is_active: true,
+                    app_version: app.getVersion()
                 });
                 // Ensure it's not revoked locally
                 await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
             } else if (data) {
+                // If the app version has updated, sync it with the database
+                if (data.app_version !== app.getVersion()) {
+                    await centralClient.from('licenses')
+                        .update({ app_version: app.getVersion() })
+                        .eq('machine_id', machineId);
+                }
+
                 // Record found. Is it revoked?
                 if (data.is_active === false) {
                     await db.insert(appSettings).values({ key: 'cloudRevoked', value: 'true' })
@@ -380,8 +388,27 @@ export async function performAutoBackup() {
 
         if (fs.existsSync(dbPath)) {
             const dbBuffer = fs.readFileSync(dbPath);
-            const { error: dbErr } = await supabase.storage.from('backups').upload(`${machineId}/database/ledgerflow_data.db`, dbBuffer, { upsert: true });
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const backupFileName = `ledgerflow_data_${timestamp}.db`;
+
+            // 1. Upload new timestamped backup
+            const { error: dbErr } = await supabase.storage.from('BACKUPS').upload(`${machineId}/database/${backupFileName}`, dbBuffer);
             if (dbErr) throw dbErr;
+
+            // 2. Fetch existing backups and enforce 15-revision strategy
+            const { data: files, error: listErr } = await supabase.storage.from('BACKUPS').list(`${machineId}/database/`);
+
+            if (!listErr && files) {
+                // Filter actual database files & sort by newest first
+                const dbFiles = files.filter(f => f.name.endsWith('.db'));
+                const sortedFiles = dbFiles.sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+
+                // If there are more than 15 files, slice the rest and delete them
+                if (sortedFiles.length > 15) {
+                    const toDelete = sortedFiles.slice(15).map(f => `${machineId}/database/${f.name}`);
+                    await supabase.storage.from('BACKUPS').remove(toDelete);
+                }
+            }
         }
 
         if (fs.existsSync(uploadsDir)) {
@@ -389,7 +416,7 @@ export async function performAutoBackup() {
             for (const file of files) {
                 const filePath = path.join(uploadsDir, file);
                 const fileBuffer = fs.readFileSync(filePath);
-                await supabase.storage.from('backups').upload(`${machineId}/images/${file}`, fileBuffer, { upsert: true });
+                await supabase.storage.from('BACKUPS').upload(`${machineId}/images/${file}`, fileBuffer, { upsert: true });
             }
         }
     } catch (e: any) {
