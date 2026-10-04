@@ -9,10 +9,11 @@
     "dev": "vite",
     "build:vite": "tsc -b && vite build",
     "build:electron": "electron-builder",
-    "build": "npm run build:vite && npm run build:electron",
+    "build": "npm run test && npm run build:vite && npm run build:electron",
     "lint": "oxlint",
     "preview": "vite preview",
-    "release": "git add . && git commit -m \"auto-publish\" && npm version patch && git push && git push --tags && npm run build:vite && electron-builder -p always"
+    "test": "vitest run",
+    "release": "git add . && git commit -m \"auto-publish\" && npm version patch && git push && git push --tags && npm run test && npm run build:vite && electron-builder -p always"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
@@ -33,6 +34,9 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^24.13.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
@@ -41,11 +45,13 @@
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "^32.0.0",
     "electron-builder": "^26.15.3",
+    "jsdom": "^29.1.1",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
-    "vite-plugin-electron": "^1.1.2"
+    "vite-plugin-electron": "^1.1.2",
+    "vitest": "^5.0.3"
   },
   "build": {
     "asar": true,
