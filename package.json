@@ -55,6 +55,7 @@
     "npmRebuild": false,
     "appId": "com.ledgerflow.desktop",
     "productName": "LedgerFlow",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
     "directories": {
       "output": "release-build",
       "buildResources": "build-resources"
