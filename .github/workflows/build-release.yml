@@ -42,7 +42,16 @@ jobs:
       - name: Build React Interface
         run: npm run build:vite
 
-      - name: Build Electron Exe & Push Natively
-        run: npx electron-builder --win --x64 -p always
+      - name: Build Electron Exe natively
+        run: npx electron-builder --win --x64 -p never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Release Assets Safely
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.NEW_APP_VERSION }}
+          files: |
+            release-build/*.exe
+            release-build/*.blockmap
+            release-build/latest.yml
