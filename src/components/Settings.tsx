@@ -74,7 +74,7 @@ export function Settings() {
         setIsSyncing(true);
         setSyncMessage('');
         try {
-            const result = await window.electronAPI?.backupToCloud({});
+            const result = await window.electronAPI?.backupToCloud();
             if (result?.success) {
                 setSyncMessage('Backup completed successfully!');
             } else {
