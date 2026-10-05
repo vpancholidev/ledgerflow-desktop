@@ -31,9 +31,15 @@ export const generateDaybookPDF = (
         const namePart = c ? ` - ${c.name}` : '';
         const dateStr = new Date(t.date).toLocaleDateString() + ' ' + new Date(t.date).toLocaleTimeString();
 
+        let enhancedDesc = t.desc + namePart;
+        if (t.counterpartyId) {
+            const cp = customers.find(x => x.id === t.counterpartyId);
+            if (cp) enhancedDesc += `\n(Peer: ${cp.name})`;
+        }
+
         return [
             dateStr,
-            t.desc + namePart,
+            enhancedDesc,
             t.type === 'debit' ? t.amount.toLocaleString() : '-',
             t.type === 'credit' ? t.amount.toLocaleString() : '-'
         ];
@@ -54,7 +60,8 @@ export const generateDaybookPDF = (
 export const generatePassbookPDF = (
     companyName: string,
     customer: Customer,
-    transactions: { date: string; desc: string; type: string; amount: number; runningBalance: number }[]
+    transactions: (Transaction & { runningBalance: number })[],
+    customersList: Customer[] = []
 ) => {
     const doc = new jsPDF();
 
@@ -78,9 +85,17 @@ export const generatePassbookPDF = (
 
     // Table
     const tableData = transactions.map(t => {
+        let enhancedDesc = t.desc;
+        if (t.counterpartyId) {
+            const cp = customersList.find(c => c.id === t.counterpartyId);
+            if (cp) {
+                enhancedDesc += `\n(Peer: ${cp.name} ${cp.customerNo ? `(${cp.customerNo})` : ''})`;
+            }
+        }
+
         return [
             new Date(t.date).toLocaleDateString(),
-            t.desc,
+            enhancedDesc,
             t.type === 'credit' ? t.amount.toLocaleString() : '-',
             t.type === 'debit' ? t.amount.toLocaleString() : '-',
             (t.runningBalance < 0 ? '-' : (t.runningBalance > 0 ? '+' : '')) + Math.abs(t.runningBalance).toLocaleString()
@@ -105,7 +120,8 @@ export const generateConfirmationPDF = (
     customer: Customer,
     dateRange: { from: string, to: string },
     filteredTransactions: Transaction[],
-    openingBalance: number
+    openingBalance: number,
+    customersList: Customer[] = []
 ) => {
     const doc = new jsPDF();
 
@@ -161,9 +177,15 @@ export const generateConfirmationPDF = (
     }
 
     filteredTransactions.forEach(t => {
+        let enhancedDesc = t.desc;
+        if (t.counterpartyId) {
+            const cp = customersList.find(c => c.id === t.counterpartyId);
+            if (cp) enhancedDesc += `\n(Peer: ${cp.name} ${cp.customerNo ? `(${cp.customerNo})` : ''})`;
+        }
+
         const item = {
             date: new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, '-'),
-            desc: t.desc,
+            desc: enhancedDesc,
             amount: t.amount
         };
         if (t.type === 'debit') debits.push(item);

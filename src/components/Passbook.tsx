@@ -65,7 +65,7 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
     }
 
     const handleExportPDF = () => {
-        const doc = generatePassbookPDF(companyName, customer, displayTxns);
+        const doc = generatePassbookPDF(companyName, customer, displayTxns, customers);
         doc.save(`${customer.name.replace(/[^a-z0-9]/gi, '_')}_Passbook.pdf`);
     };
 
@@ -160,7 +160,16 @@ export function Passbook({ customerId, onBack }: { customerId: string | null, on
                             {paginatedTxns.map(t => (
                                 <tr key={t.id} className="group hover:bg-slate-50 transition-colors bg-white text-sm">
                                     <td className="px-6 py-4 whitespace-nowrap text-slate-500">{new Date(t.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 text-slate-900 font-medium">{t.desc}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-slate-900 font-medium">{t.desc}</div>
+                                        {t.counterpartyId && (() => {
+                                            const cp = customers.find(c => c.id === t.counterpartyId);
+                                            if (cp) {
+                                                return <div className="text-xs text-slate-500 font-medium mt-0.5">Peer: {cp.name} {cp.customerNo ? `(${cp.customerNo})` : ''}</div>;
+                                            }
+                                            return null;
+                                        })()}
+                                    </td>
                                     <td className="px-6 py-4 text-right tabular-nums text-emerald-600 font-medium">
                                         {t.type === 'credit' ? `₹ ${t.amount.toLocaleString()}` : '-'}
                                     </td>

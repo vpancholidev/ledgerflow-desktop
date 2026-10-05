@@ -62,7 +62,8 @@ export function ConfirmationReportModal({ isOpen, onClose, customerId }: { isOpe
             customer,
             { from: fromDate, to: toDate },
             periodTransactions,
-            openingBalance
+            openingBalance,
+            customers
         );
 
         doc.save(`Confirmation_of_Accounts_${customer.name}_${fromDate}_to_${toDate}.pdf`);
