@@ -16,6 +16,15 @@ export function getDbPath() {
 
 export let sqlite: any;
 export let db: any;
+export let isDbDirtyForBackup = false;
+
+export function markDbDirty() {
+  isDbDirtyForBackup = true;
+}
+
+export function resetDbDirtyFlag() {
+  isDbDirtyForBackup = false;
+}
 
 export async function initDb() {
   const SQL = await initSqlJs();
@@ -64,11 +73,13 @@ export async function initDb() {
   try { sqlite.exec("ALTER TABLE transactions ADD COLUMN counterparty_id TEXT;"); } catch (e) { }
 
   saveDb();
+  isDbDirtyForBackup = false;
 }
 
 export function saveDb() {
   if (sqlite) {
     const data = sqlite.export();
     fs.writeFileSync(getDbPath(), Buffer.from(data));
+    isDbDirtyForBackup = true;
   }
 }

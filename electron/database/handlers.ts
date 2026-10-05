@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { db, saveDb } from './index';
+import { db, saveDb, isDbDirtyForBackup, resetDbDirtyFlag, markDbDirty } from './index';
 import { customers, transactions, appSettings } from './schema';
 import crypto from 'crypto';
 import { eq, and } from 'drizzle-orm';
@@ -66,6 +66,7 @@ export function registerHandlers() {
                 console.error('File copy critical error:', e);
             }
         }
+        if (savedNames.length > 0) markDbDirty();
         return savedNames;
     });
 
@@ -76,6 +77,7 @@ export function registerHandlers() {
             const newName = crypto.randomUUID() + ext;
             const destPath = path.join(uploadsDir, newName);
             fs.copyFileSync(sourcePath, destPath);
+            markDbDirty();
             return newName;
         } catch (e: any) {
             console.error('File copy critical error:', e);
@@ -225,7 +227,7 @@ export function registerHandlers() {
 
     ipcMain.handle('backup-to-cloud', async () => {
         try {
-            await performAutoBackup();
+            await performAutoBackup(true);
             return { success: true };
         } catch (e: any) {
             console.error("Cloud Backup Error", e);
@@ -386,8 +388,12 @@ export function registerHandlers() {
     });
 }
 
-export async function performAutoBackup() {
+export async function performAutoBackup(force = false) {
     try {
+        if (!force && !isDbDirtyForBackup) {
+            return;
+        }
+
         const url = CODCLAW_CENTRAL_URL;
         const key = CODCLAW_CENTRAL_KEY;
         const machineId = getMachineId();
@@ -433,6 +439,8 @@ export async function performAutoBackup() {
                 await supabase.storage.from('backups').upload(`${machineId}/images/${file}`, fileBuffer, { upsert: true });
             }
         }
+
+        resetDbDirtyFlag();
     } catch (e: any) {
         console.error("Cloud Backup Sub-Routine Error", e);
         throw e;
