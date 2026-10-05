@@ -26,6 +26,10 @@ export function resetDbDirtyFlag() {
   isDbDirtyForBackup = false;
 }
 
+export function getDbDirtyFlag() {
+  return isDbDirtyForBackup;
+}
+
 export async function initDb() {
   const SQL = await initSqlJs();
   let buffer;

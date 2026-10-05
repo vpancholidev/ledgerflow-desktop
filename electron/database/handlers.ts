@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { db, saveDb, isDbDirtyForBackup, resetDbDirtyFlag, markDbDirty } from './index';
+import { db, saveDb, getDbDirtyFlag, resetDbDirtyFlag, markDbDirty } from './index';
 import { customers, transactions, appSettings } from './schema';
 import crypto from 'crypto';
 import { eq, and } from 'drizzle-orm';
@@ -129,7 +129,11 @@ export function registerHandlers() {
                     app_version: app.getVersion()
                 });
                 // Ensure it's not revoked locally
-                await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                const existingRevoked = await db.select().from(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                if (existingRevoked.length > 0) {
+                    await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                    saveDb();
+                }
             } else if (data) {
                 // If the app version has updated, sync it with the database
                 if (data.app_version !== app.getVersion()) {
@@ -140,17 +144,22 @@ export function registerHandlers() {
 
                 // Record found. Is it revoked?
                 if (data.is_active === false) {
-                    await db.insert(appSettings).values({ key: 'cloudRevoked', value: 'true' })
-                        .onConflictDoUpdate({ target: appSettings.key, set: { value: 'true' } });
-
-                    saveDb();
+                    const existingRevoked = await db.select().from(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                    if (existingRevoked.length === 0 || existingRevoked[0].value !== 'true') {
+                        await db.insert(appSettings).values({ key: 'cloudRevoked', value: 'true' })
+                            .onConflictDoUpdate({ target: appSettings.key, set: { value: 'true' } });
+                        saveDb();
+                    }
                     // Send instant lockout signal to UI
                     const wins = BrowserWindow.getAllWindows();
                     if (wins.length > 0) wins[0].webContents.send('remote-revocation');
                 } else {
                     // It's active! Ensure local revoked flag is cleared.
-                    await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
-                    saveDb();
+                    const existingRevoked = await db.select().from(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                    if (existingRevoked.length > 0) {
+                        await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
+                        saveDb();
+                    }
                 }
             }
         } catch (e) {
@@ -390,7 +399,7 @@ export function registerHandlers() {
 
 export async function performAutoBackup(force = false) {
     try {
-        if (!force && !isDbDirtyForBackup) {
+        if (!force && !getDbDirtyFlag()) {
             return;
         }
 
