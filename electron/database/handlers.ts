@@ -368,6 +368,20 @@ export function registerHandlers() {
             set: { value }
         });
         saveDb();
+
+        // Sync Company Name to Central Supabase
+        if (key === 'companyName' && CODCLAW_CENTRAL_URL.startsWith('https://')) {
+            try {
+                const centralClient = createClient(CODCLAW_CENTRAL_URL, CODCLAW_CENTRAL_KEY, { auth: { persistSession: false } });
+                const machineId = getMachineId();
+                await centralClient.from('licenses')
+                    .update({ client_name: value })
+                    .eq('machine_id', machineId);
+            } catch (e) {
+                console.error('Failed to sync company name to central DB', e);
+            }
+        }
+
         return true;
     });
 }

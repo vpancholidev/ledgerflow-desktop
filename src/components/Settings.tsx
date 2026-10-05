@@ -6,6 +6,7 @@ export function Settings() {
     const { companyName, setCompanyName } = useAppContext();
     const [name, setName] = useState(companyName);
     const [saved, setSaved] = useState(false);
+    const [machineId, setMachineId] = useState('');
 
     // Supabase States
     const [isSyncing, setIsSyncing] = useState(false);
@@ -18,6 +19,8 @@ export function Settings() {
 
     useEffect(() => {
         if (window.electronAPI) {
+            window.electronAPI.getMachineId().then(setMachineId);
+
             // Initialize Auto-Updater Listeners once
             window.electronAPI.onUpdateAvailable((info) => {
                 setUpdateStatus('downloading');
@@ -124,9 +127,17 @@ export function Settings() {
                     <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><Cloud size={20} /></div>
                     <h2 className="text-lg font-semibold text-slate-900">Cloud Backup Integration (Supabase)</h2>
                 </div>
-                <p className="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">
-                    Your financial data and documents are seamlessly synchronized and encrypted on Codclaw's central servers for your peace of mind.
-                </p>
+                <div className="flex flex-col md:flex-row md:items-start gap-4 mb-6 border-b border-slate-100 pb-4 text-sm text-slate-500">
+                    <p className="flex-1">
+                        Your financial data and documents are seamlessly synchronized and encrypted on Codclaw's central servers for your peace of mind.
+                    </p>
+                    {machineId && (
+                        <div className="flex flex-col md:items-end">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Machine ID</span>
+                            <span className="font-mono text-emerald-700 bg-emerald-100/50 border border-emerald-200 px-2.5 py-1 rounded text-xs select-all whitespace-nowrap">{machineId}</span>
+                        </div>
+                    )}
+                </div>
 
                 <button
                     onClick={handleBackup}
