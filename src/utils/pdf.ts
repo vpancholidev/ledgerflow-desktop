@@ -28,13 +28,13 @@ export const generateDaybookPDF = (
     // Table
     const tableData = transactions.map(t => {
         const c = customers.find(x => x.id === t.customerId);
-        const namePart = c ? ` - ${c.name}` : '';
+        const namePart = c ? ` - ${c.name} ${c.customerNo ? `(${c.customerNo})` : ''}` : '';
         const dateStr = new Date(t.date).toLocaleDateString() + ' ' + new Date(t.date).toLocaleTimeString();
 
         let enhancedDesc = t.desc + namePart;
         if (t.counterpartyId) {
             const cp = customers.find(x => x.id === t.counterpartyId);
-            if (cp) enhancedDesc += `\n(Peer: ${cp.name})`;
+            if (cp) enhancedDesc += `\n(Peer: ${cp.name} ${cp.customerNo ? `(${cp.customerNo})` : ''})`;
         }
 
         return [

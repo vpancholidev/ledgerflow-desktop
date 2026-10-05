@@ -132,7 +132,7 @@ export function Daybook() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="font-medium text-slate-900">{t.desc}</span>
-                                            {customer && <span className="text-slate-500 ml-1">- {customer.name}</span>}
+                                            {customer && <span className="text-slate-500 ml-1">- {customer.name} {customer.customerNo ? `(${customer.customerNo})` : ''}</span>}
                                             {t.counterpartyId && (() => {
                                                 const cp = customers.find(c => c.id === t.counterpartyId);
                                                 if (cp) return <div className="text-xs text-slate-500 font-medium mt-0.5">Peer: {cp.name} {cp.customerNo ? `(${cp.customerNo})` : ''}</div>;
