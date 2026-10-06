@@ -80,10 +80,12 @@ export async function initDb() {
   isDbDirtyForBackup = false;
 }
 
-export function saveDb() {
+export function saveDb(markDirty = true) {
   if (sqlite) {
     const data = sqlite.export();
     fs.writeFileSync(getDbPath(), Buffer.from(data));
-    isDbDirtyForBackup = true;
+    if (markDirty) {
+      isDbDirtyForBackup = true;
+    }
   }
 }

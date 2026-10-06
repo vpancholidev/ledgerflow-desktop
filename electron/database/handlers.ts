@@ -132,7 +132,7 @@ export function registerHandlers() {
                 const existingRevoked = await db.select().from(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
                 if (existingRevoked.length > 0) {
                     await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
-                    saveDb();
+                    saveDb(false);
                 }
             } else if (data) {
                 // If the app version has updated, sync it with the database
@@ -148,7 +148,7 @@ export function registerHandlers() {
                     if (existingRevoked.length === 0 || existingRevoked[0].value !== 'true') {
                         await db.insert(appSettings).values({ key: 'cloudRevoked', value: 'true' })
                             .onConflictDoUpdate({ target: appSettings.key, set: { value: 'true' } });
-                        saveDb();
+                        saveDb(false);
                     }
                     // Send instant lockout signal to UI
                     const wins = BrowserWindow.getAllWindows();
@@ -158,7 +158,7 @@ export function registerHandlers() {
                     const existingRevoked = await db.select().from(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
                     if (existingRevoked.length > 0) {
                         await db.delete(appSettings).where(eq(appSettings.key, 'cloudRevoked'));
-                        saveDb();
+                        saveDb(false);
                     }
                 }
             }
